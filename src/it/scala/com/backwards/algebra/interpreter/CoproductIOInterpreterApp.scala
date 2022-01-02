@@ -71,6 +71,7 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
+    // TODO - Make tail recursive
     def paginate: Free[F, Vector[Json]] = {
       def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
         (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)

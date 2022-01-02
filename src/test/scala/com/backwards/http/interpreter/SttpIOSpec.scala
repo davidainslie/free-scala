@@ -33,6 +33,10 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
           AsyncHttpClientCatsBackend.stub[IO]
             .whenRequestMatchesAll(_.method == POST, _.uri.path.startsWith(List("api", "oauth2", "access_token")))
             .thenJsonRespond(bearer)
+            .whenRequestMatchesAll(_.method == POST, _.uri.path.startsWith(List("api", "post")))
+            .thenRespondOk()
+            .whenRequestMatchesAll(_.method == PUT, _.uri.path.startsWith(List("api", "put")))
+            .thenRespondOk()
             .whenRequestMatchesAll(_.method == GET, _.uri.path.startsWith(List("api", "execute")))
             .thenRespond(data)
             .logging
@@ -44,6 +48,8 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
           auth <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          _    <- Post[Nothing, Unit](URI.create("https://backwards.com/api/post"))
+          _    <- Put[Nothing, Unit](URI.create("https://backwards.com/api/put"))
           data <- Get[String](URI.create("https://backwards.com/api/execute"))
         } yield (auth, data)
 

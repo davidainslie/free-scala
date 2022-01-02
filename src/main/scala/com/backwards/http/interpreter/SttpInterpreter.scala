@@ -11,7 +11,7 @@ import com.backwards.http.Http._
 import com.backwards.http.{Auth, Basic, BasicToken, Bearer, Digest, Http}
 import com.backwards.fp.FunctionOps.syntax._
 
-// TODO - Horrible repetition
+// TODO - Factor out repetition
 object SttpInterpreter {
   def apply[F[_]: MonadError[*[_], Throwable]](backend: SttpBackend[F, Any]): Http ~> F =
     new (Http ~> F) {
@@ -41,20 +41,22 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, MonadError[F, Throwable].pure(_)))
 
-          case Post(uri, headers, params, auth, deserialiser) =>
+          case Post(uri, headers, params, auth, body, serialiser, deserialiser) =>
             basicRequest
               .post(Uri(uri).addParams(params.value))
               .headers(headers.value)
               .optional(auth)(applyAuth)
+              .optional(body)(request => body => request.body(serialiser.serialise(body)))
               .response(asByteArrayAlways.map(deserialiser.deserialise))
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a)))
 
-          case Put(uri, headers, params, auth, deserialiser) =>
+          case Put(uri, headers, params, auth, body, serialiser, deserialiser) =>
             basicRequest
               .put(Uri(uri).addParams(params.value))
               .headers(headers.value)
               .optional(auth)(applyAuth)
+              .optional(body)(request => body => request.body(serialiser.serialise(body)))
               .response(asByteArrayAlways.map(deserialiser.deserialise))
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a)))

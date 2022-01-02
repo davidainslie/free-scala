@@ -10,6 +10,9 @@ object Serialiser {
   def apply[A: Serialiser]: Serialiser[A] =
     implicitly
 
+  implicit val serialiserNothing: Serialiser[Nothing] =
+    (_: Nothing) => Array.emptyByteArray
+
   implicit val serialiserVectorJson: Serialiser[Vector[Json]] =
     _.map(_.noSpaces).mkString("\n").getBytes
 }

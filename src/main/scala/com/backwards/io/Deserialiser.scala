@@ -9,6 +9,9 @@ trait Deserialiser[A] {
 }
 
 object Deserialiser {
+  implicit val deserialiserUnit: Deserialiser[Unit] =
+    (_: Array[Byte]) => ().asRight
+
   implicit val deserialiserBytes: Deserialiser[Array[Byte]] =
     (bytes: Array[Byte]) => bytes.asRight
 

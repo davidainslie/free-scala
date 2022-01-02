@@ -68,6 +68,7 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+    // TODO - Make tail recursive
     def paginate(putStreamHandle: PutStreamHandle): Free[Algebras, Unit] = {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] =
         paramsL[Json].modify(_ + ("page" -> page))(get).flatMap { json =>
