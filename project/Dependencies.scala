@@ -88,7 +88,7 @@ object Dependencies {
     val version = "0.9.28"
 
     List(
-      "refined", "refined-pureconfig", "refined-cats"
+      "refined", "refined-cats"
     ).map(group %% _ % version withSources() withJavadoc())
   }
 

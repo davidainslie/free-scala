@@ -4,6 +4,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import cats._
 import cats.derived._
 import cats.implicits._
+import eu.timepit.refined.cats._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import com.backwards.auth.Credentials
@@ -23,9 +24,24 @@ object Auth {
 
 final case class Basic(credentials: Credentials) extends Auth
 
-final case class BasicToken(token: String) extends Auth
+object Basic {
+  implicit val showBasic: Show[Basic] =
+    semiauto.show
+}
+
+final case class BasicToken(token: NonEmptyString) extends Auth
+
+object BasicToken {
+  implicit val showBasicToken: Show[BasicToken] =
+    semiauto.show
+}
 
 final case class Digest(credentials: Credentials) extends Auth
+
+object Digest {
+  implicit val showDigest: Show[Digest] =
+    semiauto.show
+}
 
 final case class Bearer(token: NonEmptyString, expiresIn: Duration) extends Auth {
   lazy val authorization: String = s"${Bearer.key} ${token.value}"
@@ -51,4 +67,7 @@ object Bearer {
     Encoder.forProduct3("access_token", "expires_in", "token_type")(t =>
       (t.token.value, t.expiresIn.toSeconds, key)
     )
+
+  implicit val showBearer: Show[Bearer] =
+    semiauto.show
 }
