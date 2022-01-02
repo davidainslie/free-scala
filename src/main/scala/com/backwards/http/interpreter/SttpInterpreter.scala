@@ -41,7 +41,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, MonadError[F, Throwable].pure(_)))
 
-          case Post.WithDeserialiser(uri, headers, params, auth, deserialiser) =>
+          case Post(uri, headers, params, auth, deserialiser) =>
             basicRequest
               .post(Uri(uri).addParams(params.value))
               .headers(headers.value)
@@ -50,7 +50,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a)))
 
-          case Put.WithDeserialiser(uri, headers, params, auth, deserialiser) =>
+          case Put(uri, headers, params, auth, deserialiser) =>
             basicRequest
               .put(Uri(uri).addParams(params.value))
               .headers(headers.value)
@@ -59,7 +59,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(_.body.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a)))
 
-          case Get.WithDeserialiser(uri, headers, params, auth, deserialiser) =>
+          case Get(uri, headers, params, auth, deserialiser) =>
             basicRequest
               .get(Uri(uri).addParams(params.value))
               .headers(headers.value)

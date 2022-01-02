@@ -63,7 +63,7 @@ object StubHttpInterpreter extends (Http ~> Id) {
       case GrantByPassword(uri, credentials) =>
         basicToken.asInstanceOf[A]
 
-      case Get.WithDeserialiser(uri, headers, params, auth, deserialiser) =>
+      case Get(uri, headers, params, auth, deserialiser) =>
         data.asInstanceOf[A]
 
       case notImplemented =>

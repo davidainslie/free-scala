@@ -21,11 +21,11 @@ object Http {
 
   final case class GrantByClientCredentials(uri: URI, credentials: Credentials) extends Http[Auth]
 
-  final case class Post[A: Deserialiser](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None) extends Http.WithDeserialiser[A]
+  final case class Post[A](uri: URI, headers: Headers, params: Params, auth: Option[Auth], deserialiser: Deserialiser[A]) extends Http[A]
 
-  final case class Put[A: Deserialiser](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None) extends Http.WithDeserialiser[A]
+  final case class Put[A](uri: URI, headers: Headers, params: Params, auth: Option[Auth], deserialiser: Deserialiser[A]) extends Http[A]
 
-  final case class Get[A: Deserialiser](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None) extends Http.WithDeserialiser[A]
+  final case class Get[A](uri: URI, headers: Headers, params: Params, auth: Option[Auth], deserialiser: Deserialiser[A]) extends Http[A]
 
   object Post {
     def uriL[A: Deserialiser]: Lens[Post[A], URI] =
@@ -37,10 +37,8 @@ object Http {
     def paramsL[A: Deserialiser]: Lens[Post[A], Params] =
       GenLens[Post[A]](_.params)
 
-    object WithDeserialiser {
-      def unapply[A](post: Post[A]): Option[(URI, Headers, Params, Option[Auth], Deserialiser[A])] =
-        (post.uri, post.headers, post.params, post.auth, post.deserialiser).some
-    }
+    def apply[A](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None)(implicit deserialiser: Deserialiser[A], unused: DummyImplicit): Post[A] =
+      apply(uri, headers, params, auth, deserialiser)
   }
 
   object Put {
@@ -53,10 +51,8 @@ object Http {
     def paramsL[A: Deserialiser]: Lens[Put[A], Params] =
       GenLens[Put[A]](_.params)
 
-    object WithDeserialiser {
-      def unapply[A](put: Put[A]): Option[(URI, Headers, Params, Option[Auth], Deserialiser[A])] =
-        (put.uri, put.headers, put.params, put.auth, put.deserialiser).some
-    }
+    def apply[A](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None)(implicit deserialiser: Deserialiser[A], unused: DummyImplicit): Put[A] =
+      apply(uri, headers, params, auth, deserialiser)
   }
 
   object Get {
@@ -69,14 +65,7 @@ object Http {
     def paramsL[A: Deserialiser]: Lens[Get[A], Params] =
       GenLens[Get[A]](_.params)
 
-    object WithDeserialiser {
-      def unapply[A](get: Get[A]): Option[(URI, Headers, Params, Option[Auth], Deserialiser[A])] =
-        (get.uri, get.headers, get.params, get.auth, get.deserialiser).some
-    }
-  }
-
-  sealed abstract class WithDeserialiser[A: Deserialiser] extends Http[A] {
-    val deserialiser: Deserialiser[A] =
-      implicitly[Deserialiser[A]]
+    def apply[A](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None)(implicit deserialiser: Deserialiser[A], unused: DummyImplicit): Get[A] =
+      apply(uri, headers, params, auth, deserialiser)
   }
 }
