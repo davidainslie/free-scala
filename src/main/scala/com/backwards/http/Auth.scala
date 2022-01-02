@@ -1,6 +1,8 @@
 package com.backwards.http
 
 import scala.concurrent.duration.{Duration, DurationInt}
+import cats._
+import cats.derived._
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.{Decoder, DecodingFailure, Encoder}
@@ -14,6 +16,9 @@ object Auth {
     List[Decoder[Auth]](
       Decoder[Bearer].widen
     ).reduceLeft(_ or _)
+
+  implicit val showAuth: Show[Auth] =
+    semiauto.show
 }
 
 final case class Basic(credentials: Credentials) extends Auth

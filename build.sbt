@@ -1,7 +1,7 @@
 import sbt._
 
-ThisBuild / evictionErrorLevel := Level.Info
-ThisBuild / versionScheme := Some("early-semver")
+lazy val root: Project =
+  project("free-scala", file("."))
 
 lazy val thisScalaVersion: String =
   "2.13.7"
@@ -9,8 +9,8 @@ lazy val thisScalaVersion: String =
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
 
-lazy val root: Project =
-  project("free-scala", file("."))
+ThisBuild / evictionErrorLevel := Level.Info
+ThisBuild / versionScheme := Some("early-semver")
 
 def project(id: String, base: File): Project =
   Project(id, base)
