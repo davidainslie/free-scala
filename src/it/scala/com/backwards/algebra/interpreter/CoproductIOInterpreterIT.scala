@@ -15,20 +15,20 @@ import io.circe.literal.JsonStringContext
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.{GetObjectResponse, NoSuchKeyException}
-import sttp.client3.{HttpError, SttpBackend}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import sttp.client3.{HttpError, SttpBackend}
 import sttp.model.Method._
 import sttp.model.StatusCode
-import org.scalatest.{EitherValues, Inspectors}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{EitherValues, Inspectors}
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
+import com.backwards.aws.s3._
 import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
@@ -37,7 +37,6 @@ import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
 import com.backwards.io.Deserialiser
 import com.backwards.json.JsonOps.syntax._
-import com.backwards.io.URIOps.syntax._
 
 class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValues with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =

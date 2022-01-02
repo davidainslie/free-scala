@@ -23,19 +23,18 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.auth.{Credentials, Password, User}
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3.interpreter.S3Interpreter
+import com.backwards.aws.s3._
 import com.backwards.docker.aws.AwsContainer
-import com.backwards.fp.implicits.monadErrorId
 import com.backwards.fp.free.FreeOps.syntax._
+import com.backwards.fp.implicits.monadErrorId
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
 import com.backwards.io.Deserialiser
 import com.backwards.json.JsonOps.syntax._
-import com.backwards.io.URIOps.syntax._
 
 class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =

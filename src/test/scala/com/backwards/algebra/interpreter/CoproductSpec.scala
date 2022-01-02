@@ -16,14 +16,13 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3.S3._
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3, S3StubInterpreter}
+import com.backwards.aws.s3._
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http._
 import com.backwards.io.Deserialiser
 import com.backwards.json.JsonOps.syntax._
-import com.backwards.io.URIOps.syntax._
 
 class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
   "Coproduct Algebras (in this case of Http and S3)" should {
