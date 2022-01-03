@@ -2,13 +2,11 @@ package com.backwards.http
 
 import monocle.Lens
 import monocle.macros.GenLens
+import com.backwards.text.StringValue
 
 final case class Params(value: Map[String, String] = Map.empty) extends AnyVal {
-  def +(keyValue: (String, String)): Params =
-    Params.valueL.modify(_ + (keyValue._1 -> keyValue._2))(this)
-
-  def +(keyValue: (String, Int))(implicit dummyImplicit: DummyImplicit): Params =
-    Params.valueL.modify(_ + (keyValue._1 -> keyValue._2.toString))(this)
+  def +[V: StringValue](keyValue: (String, V)): Params =
+    Params.valueL.modify(_ + (keyValue._1 -> StringValue[V](keyValue._2)))(this)
 }
 
 object Params {
