@@ -63,9 +63,9 @@ object Bearer extends ShowRefined {
       for {
         accessToken <- hcursor.get[String]("access_token").map(NonEmptyString.unsafeFrom)
         expiresIn <- hcursor.get[Int]("expires_in")
-        _ <- hcursor.get[String]("token_type").flatMap {
-          case `key` => Bearer.asRight
-          case x => DecodingFailure(s"Expected $key token type and not: $x", Nil).asLeft
+        _ <- hcursor.get[String]("token_type").flatMap { tokenType =>
+          if (tokenType.equalsIgnoreCase(key)) Bearer.asRight
+          else DecodingFailure(s"Expected $key token type and not: $tokenType", Nil).asLeft
         }
       } yield
         Bearer(accessToken, expiresIn.seconds)
