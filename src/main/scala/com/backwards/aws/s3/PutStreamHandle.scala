@@ -1,7 +1,6 @@
 package com.backwards.aws.s3
 
 import alex.mojaki.s3upload.{MultiPartOutputStream, StreamTransferManager}
-import com.backwards.io.Serialiser
 
 final case class PutStreamHandle(manager: StreamTransferManager, stream: MultiPartOutputStream) {
   def write[A: Serialiser](data: A): Unit =

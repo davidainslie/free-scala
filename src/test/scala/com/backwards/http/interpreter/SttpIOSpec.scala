@@ -8,7 +8,8 @@ import cats.free.Free
 import cats.implicits._
 import cats.{InjectK, ~>}
 import eu.timepit.refined.auto._
-import sttp.client3.{HttpError, SttpBackend}
+import io.circe.Json
+import sttp.client3.{ByteArrayBody, HttpError, SttpBackend}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.model.Method._
 import sttp.model.StatusCode
@@ -48,7 +49,7 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
           auth <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
-          _    <- Post[Nothing, Unit](URI.create("https://backwards.com/api/post"))
+          _    <- Post[Data, Unit](URI.create("https://backwards.com/api/post"), body = Data("blah", 2).some)
           _    <- Put[Nothing, Unit](URI.create("https://backwards.com/api/put"))
           data <- Get[String](URI.create("https://backwards.com/api/execute"))
         } yield (auth, data)
@@ -88,5 +89,22 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
 
       error.statusCode mustEqual StatusCode.InternalServerError
     }
+  }
+}
+
+final case class Data(one: String, two: Int)
+
+object Data {
+  implicit val serialiserData: Serialiser[Data] = new Serialiser[Data] {
+    val contentType: Option[String] =
+      "application/json".some
+
+    def serialise(data: Data): Array[Byte] =
+      Json.obj(
+        "data" -> Json.obj(
+          "one" -> Json.fromString(data.one),
+          "two" -> Json.fromInt(data.two)
+        )
+      ).spaces2.getBytes
   }
 }

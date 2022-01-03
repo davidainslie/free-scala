@@ -18,13 +18,13 @@ import com.backwards.aws.s3.S3Client
  */
 trait AwsContainer {
   def withS3(container: LocalStackContainer)(test: S3Client => Assertion): Assertion = {
-    val s3: S3Client =
+    val s3Client: S3Client =
       S3Client(
         Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
         Region.of(container.container.getRegion),
         container.container.getEndpointOverride(Service.S3).some
       )
 
-    try test(s3) finally s3.close()
+    try test(s3Client) finally s3Client.close()
   }
 }

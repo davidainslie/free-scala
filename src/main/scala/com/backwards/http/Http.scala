@@ -8,7 +8,6 @@ import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 import com.backwards.auth.Credentials
-import com.backwards.io.{Deserialiser, Serialiser}
 
 sealed trait Http[A]
 

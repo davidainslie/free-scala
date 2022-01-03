@@ -13,7 +13,7 @@ import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.fp.implicits._
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
-import com.backwards.io.URIOps.syntax._
+import com.backwards.net.URIOps.syntax._
 
 class HttpSpec extends AnyWordSpec with Matchers {
   "Http Algebra" should {

@@ -25,29 +25,28 @@ import org.scalatest.{EitherValues, Inspectors}
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.auth.{Credentials, Password, User}
-import com.backwards.aws
 import com.backwards.aws.s3.S3._
-import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.aws.s3._
+import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
-import com.backwards.http._
-import com.backwards.io.Deserialiser
+import com.backwards.http.{Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.{aws, http}
 
 class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValues with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against async interpreters" in withS3(container) { s3 =>
+    "be applied against async interpreters" in withS3(container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get
-      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
         // TODO - Make tail recursive
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
@@ -99,7 +98,7 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3))
+        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
 
       val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
         response.attempt.unsafeRunSync()
@@ -111,7 +110,7 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
       )
     }
 
-    "be applied against async interpreters where Http exceptions are captured via MonadError" in withS3(container) { s3 =>
+    "be applied against async interpreters where Http exceptions are captured via MonadError" in withS3(container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       object SttpInterpreter {
@@ -136,7 +135,7 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3))
+        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
 
       val Left(error: HttpError[_]) =
         response.attempt.unsafeRunSync()
@@ -144,7 +143,7 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
       error.statusCode mustEqual StatusCode.InternalServerError
     }
 
-    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withS3(container) { s3 =>
+    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withS3(container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       object SttpInterpreter {
@@ -183,7 +182,7 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3))
+        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
 
       // Our program fails when accessing the wrong key
       response.attempt.unsafeRunSync().left.value mustBe a [NoSuchKeyException]

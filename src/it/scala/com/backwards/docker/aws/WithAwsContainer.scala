@@ -23,7 +23,7 @@ trait WithAwsContainer {
   container.start()
 
   sys.addShutdownHook(
-    Try(s3.close()) >> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) >> Try(container.stop())
+    Try(s3Client.close()) >> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) >> Try(container.stop())
   )
 
   /*
@@ -31,7 +31,7 @@ trait WithAwsContainer {
   val u: String Either NonEmptyString =
     NonEmptyString.from(container.container.getAccessKey)
   */
-  lazy val s3: S3Client =
+  lazy val s3Client: S3Client =
     S3Client(
       Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
       Region.of(container.container.getRegion),

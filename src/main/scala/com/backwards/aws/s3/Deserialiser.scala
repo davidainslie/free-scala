@@ -1,4 +1,4 @@
-package com.backwards.io
+package com.backwards.aws.s3
 
 import cats.implicits._
 import io.circe.Json

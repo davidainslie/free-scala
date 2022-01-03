@@ -1,9 +1,9 @@
-package com.backwards.io
+package com.backwards.net
 
 import java.net.URI
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import com.backwards.io.URIOps.syntax._
+import com.backwards.net.URIOps.syntax._
 
 class URIOpsSpec extends AnyWordSpec with Matchers {
   "URI" should {

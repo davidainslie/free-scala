@@ -28,7 +28,7 @@ class S3IOInterpreterIT extends AnyWordSpec with Matchers with ForAllTestContain
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against an async interpreter" in withS3(container) { s3 =>
+    "be applied against an async interpreter" in withS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
         for {
           bucket    <- Bucket("my-bucket").liftFree[S3]
@@ -38,7 +38,7 @@ class S3IOInterpreterIT extends AnyWordSpec with Matchers with ForAllTestContain
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(S3IOInterpreter(s3))
+        program.foldMap(S3IOInterpreter(s3Client))
 
       val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
         response.attempt.unsafeRunSync()

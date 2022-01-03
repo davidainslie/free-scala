@@ -8,17 +8,18 @@ import cats.free.Free
 import cats.implicits._
 import io.circe.Json
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import com.backwards.aws.s3
 import com.backwards.aws.s3.S3.{CreateBucket, PutStream}
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, PutStreamHandle, S3}
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
+import com.backwards.aws.s3.{Bucket, CreateBucketRequest, PutStreamHandle, S3}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
+import com.backwards.http
+import com.backwards.http.Http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendOps.syntax._
-import com.backwards.http._
 import com.backwards.http.interpreter.SttpInterpreter
-import com.backwards.io.{Deserialiser, Serialiser}
 import com.backwards.json.JsonOps.syntax._
 
 /**
@@ -67,7 +68,7 @@ import com.backwards.json.JsonOps.syntax._
 object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
-  implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+  implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
     // TODO - Make tail recursive
     def paginate(putStreamHandle: PutStreamHandle): Free[Algebras, Unit] = {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] =
@@ -100,6 +101,6 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   // TODO A RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
-      program.foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3)) >> backend.close()
+      program.foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client)) >> backend.close()
     )
 }

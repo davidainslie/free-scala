@@ -18,26 +18,26 @@ import com.backwards.aws.s3.{PutStreamHandle, S3, S3Client}
  * TODO - Regarding non-stream cases, there is a fs2 S3 library that could be spiked.
  */
 object S3IOInterpreter {
-  def apply(s3: S3Client): S3 ~> IO =
+  def apply(s3Client: S3Client): S3 ~> IO =
     new (S3 ~> IO) {
       override def apply[A](fa: S3[A]): IO[A] =
         fa match {
           case CreateBucket(request) =>
-            IO.fromCompletableFuture(IO(s3.v2.async.createBucket(request))).map(_.asInstanceOf[A])
+            IO.fromCompletableFuture(IO(s3Client.v2.async.createBucket(request))).map(_.asInstanceOf[A])
 
           case PutObject(request, body) =>
             val bytes: Array[Byte] =
               IOUtils.toByteArray(body.contentStreamProvider().newStream())
 
             val putObjectResponseFuture: CompletableFuture[PutObjectResponse] =
-              s3.v2.async.putObject(request, AsyncRequestBody.fromBytes(bytes))
+              s3Client.v2.async.putObject(request, AsyncRequestBody.fromBytes(bytes))
 
             IO.fromCompletableFuture(IO(putObjectResponseFuture)).map(_.asInstanceOf[A])
 
           case PutStream(bucket, key) =>
             IO {
               val manager: StreamTransferManager =
-                new StreamTransferManager(bucket.name, key, s3.v1.sync)
+                new StreamTransferManager(bucket.name, key, s3Client.v1.sync)
 
               val outputStream: MultiPartOutputStream =
                 manager.getMultiPartOutputStreams.get(0)
@@ -50,7 +50,7 @@ object S3IOInterpreter {
               AsyncResponseTransformer.toBytes()
 
             val getObjectResponseFuture: CompletableFuture[ResponseBytes[GetObjectResponse]] =
-              s3.v2.async.getObject(request, asyncResponseTransformer)
+              s3Client.v2.async.getObject(request, asyncResponseTransformer)
 
             IO.fromCompletableFuture(IO(getObjectResponseFuture)).map(responseBytes =>
               new ResponseInputStream[GetObjectResponse](

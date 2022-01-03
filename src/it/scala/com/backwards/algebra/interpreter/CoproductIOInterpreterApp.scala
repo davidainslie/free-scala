@@ -21,7 +21,6 @@ import com.backwards.http.Http._
 import com.backwards.http.SttpBackendOps.syntax._
 import com.backwards.http._
 import com.backwards.http.interpreter.SttpInterpreter
-import com.backwards.io.Deserialiser
 import com.backwards.json.JsonOps.syntax._
 
 /**
@@ -100,7 +99,7 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
       program
-        .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3))
+        .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client))
         .map(response => scribe.info(new String(response.readAllBytes())))
         >> backend.close()
     )

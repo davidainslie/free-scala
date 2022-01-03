@@ -26,7 +26,7 @@ class S3InterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against a default sync interpreter" in withS3(container) { s3 =>
+    "be applied against a default sync interpreter" in withS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
         for {
           bucket    <- Bucket("my-bucket").liftFree[S3]
@@ -36,7 +36,7 @@ class S3InterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer
         } yield response
 
       val response: Id[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(S3Interpreter(s3))
+        program.foldMap(S3Interpreter(s3Client))
 
       new String(response.readAllBytes) mustEqual "Blah blah"
     }

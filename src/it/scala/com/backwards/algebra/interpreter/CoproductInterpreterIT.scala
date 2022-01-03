@@ -24,16 +24,16 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3.S3._
-import com.backwards.aws.s3.interpreter.S3Interpreter
 import com.backwards.aws.s3._
+import com.backwards.aws.s3.interpreter.S3Interpreter
 import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.fp.implicits.monadErrorId
+import com.backwards.http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
-import com.backwards.http._
-import com.backwards.io.Deserialiser
+import com.backwards.http.{Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
 
 class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
@@ -41,11 +41,11 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against sync interpreters" in withS3(container) { s3 =>
+    "be applied against sync interpreters" in withS3(container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get
-      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
         // TODO - Make tail recursive
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
@@ -97,7 +97,7 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
         } yield response
 
       val response: Id[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3Interpreter(s3))
+        program.foldMap(SttpInterpreter() or S3Interpreter(s3Client))
 
       new String(response.readAllBytes).pipe(data =>
         forAll(List(SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2))(dataEntry =>
