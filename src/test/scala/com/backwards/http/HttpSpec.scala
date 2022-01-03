@@ -11,6 +11,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.fp.implicits._
+import com.backwards.http.CredentialsSerialiser.ByPassword.serialiserCredentialsByPassword
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.net.URIOps.syntax._
@@ -20,7 +21,7 @@ class HttpSpec extends AnyWordSpec with Matchers {
     "be applied against a stubbed interpreter for the simplest implementation" in {
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, Json)] =
         for {
-          auth <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data <- Get[Json](URI.create("https://backwards.com/api/execute"))
         } yield (auth, data)
 
@@ -60,7 +61,7 @@ object StubHttpInterpreter extends (Http ~> Id) {
 
   override def apply[A](fa: Http[A]): Id[A] =
     fa match {
-      case GrantByPassword(uri, credentials) =>
+      case Post(uri, headers, params, auth, body, serialiser, deserialiser) =>
         basicToken.asInstanceOf[A]
 
       case Get(uri, headers, params, auth, deserialiser) =>

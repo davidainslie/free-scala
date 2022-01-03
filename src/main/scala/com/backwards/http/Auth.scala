@@ -6,20 +6,24 @@ import cats.derived._
 import cats.implicits._
 import eu.timepit.refined.cats._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.parser._
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import com.backwards.auth.Credentials
 
 sealed trait Auth
 
 object Auth {
+  implicit val showAuth: Show[Auth] =
+    semiauto.show
+
   // TODO - WIP - Need to add Basic, BasicToken and Digest
   implicit val decoderAuth: Decoder[Auth] =
     List[Decoder[Auth]](
       Decoder[Bearer].widen
     ).reduceLeft(_ or _)
 
-  implicit val showAuth: Show[Auth] =
-    semiauto.show
+  implicit def deserialiserAuth(implicit D: Decoder[Auth]): Deserialiser[Auth] =
+    (bytes: Array[Byte]) => parse(new String(bytes)).flatMap(_.as[Auth](D)).leftMap(error => DeserialiserError(error.getMessage, Option(error.getCause)))
 }
 
 final case class Basic(credentials: Credentials) extends Auth
@@ -48,7 +52,11 @@ final case class Bearer(token: NonEmptyString, expiresIn: Duration) extends Auth
 }
 
 object Bearer {
-  val key: String = "Bearer"
+  val key: String =
+    "Bearer"
+
+  implicit val showBearer: Show[Bearer] =
+    semiauto.show
 
   implicit val decoderBearer: Decoder[Bearer] =
     Decoder.instance(hcursor =>
@@ -67,7 +75,4 @@ object Bearer {
     Encoder.forProduct3("access_token", "expires_in", "token_type")(t =>
       (t.token.value, t.expiresIn.toSeconds, key)
     )
-
-  implicit val showBearer: Show[Bearer] =
-    semiauto.show
 }

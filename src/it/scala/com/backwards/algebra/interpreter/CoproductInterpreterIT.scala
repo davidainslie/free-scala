@@ -30,10 +30,11 @@ import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.fp.implicits.monadErrorId
 import com.backwards.http
+import com.backwards.http.CredentialsSerialiser.ByClientCredentials.serialiserCredentialsByClientCredentials
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
-import com.backwards.http.{Bearer, Http}
+import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
 
 class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
@@ -90,7 +91,7 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
         for {
           bucket    <- Bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(CreateBucketRequest(bucket))
-          _         <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          _         <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](URI.create("https://backwards.com/api/execute")).paginate
           _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
           response  <- GetObject(GetObjectRequest(bucket, "foo"))

@@ -19,9 +19,10 @@ import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http
+import com.backwards.http.CredentialsSerialiser.ByPassword.serialiserCredentialsByPassword
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
-import com.backwards.http.{Http, StubHttpInterpreter}
+import com.backwards.http.{Auth, Http, StubHttpInterpreter}
 import com.backwards.json.JsonOps.syntax._
 
 class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
@@ -51,7 +52,7 @@ class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
         for {
           bucket    <- Bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(CreateBucketRequest(bucket))
-          _         <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          _         <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](URI.create("https://backwards.com/api/execute")).paginate
           _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
           response  <- GetObject(GetObjectRequest(bucket, "foo"))

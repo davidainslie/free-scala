@@ -7,7 +7,6 @@ import cats.free.Free._
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
-import com.backwards.auth.Credentials
 
 sealed trait Http[A]
 
@@ -15,10 +14,6 @@ sealed trait Http[A]
 object Http {
   implicit def httpToFree[F[_]: InjectK[Http, *[_]], A](fa: Http[A]): Free[F, A] =
     liftInject[F](fa)
-
-  final case class GrantByPassword(uri: URI, credentials: Credentials) extends Http[Auth]
-
-  final case class GrantByClientCredentials(uri: URI, credentials: Credentials) extends Http[Auth]
 
   final case class Post[A, B](uri: URI, headers: Headers, params: Params, auth: Option[Auth], body: Option[A], serialiser: Serialiser[A], deserialiser: Deserialiser[B]) extends Http[B]
 

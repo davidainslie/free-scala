@@ -6,15 +6,16 @@ import cats.free.Free
 import cats.implicits._
 import cats.{Id, InjectK, ~>}
 import eu.timepit.refined.auto._
-import sttp.client3.{HttpError, SttpBackend}
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{HttpError, SttpBackend}
 import sttp.model.Method._
 import sttp.model.StatusCode
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.fp.implicits.monadErrorId
+import com.backwards.http.CredentialsSerialiser.ByClientCredentials.serialiserCredentialsByClientCredentials
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
@@ -43,7 +44,7 @@ class SttpIdSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data <- Get[String](URI.create("https://backwards.com/api/execute"))
         } yield (auth, data)
 
@@ -67,7 +68,7 @@ class SttpIdSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- GrantByPassword(URI.create("https://backwards.com/api/oauth2/access_token"), Credentials(User("user"), Password("password")))
+          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data <- Get[String](URI.create("https://backwards.com/api/execute"))
         } yield (auth, data)
 
