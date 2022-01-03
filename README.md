@@ -27,7 +27,7 @@ def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free
   } yield response
 ```
 
-#### Get paginated Http streaming each page to S3
+### Get paginated Http streaming each page to S3 completing as one Object
 
 Take a look at the example code [CoproductIOStreamInterpreterApp](src/it/scala/com/backwards/algebra/interpreter/CoproductIOStreamInterpreterApp.scala) where the following program is run:
 
