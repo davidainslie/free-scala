@@ -101,7 +101,7 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
       program
         .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client))
-        .map(response => scribe.info(new String(response.readAllBytes())))
+        .map(response => scribe.info(new String(response.readAllBytes)))
         >> backend.close()
     )
 }
