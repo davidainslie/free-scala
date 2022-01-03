@@ -1,17 +1,17 @@
 package com.backwards.http
 
-import java.net.URI
 import cats.free.Free
 import cats.implicits._
 import cats.{Id, InjectK, ~>}
 import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.fp.implicits._
-import com.backwards.http.CredentialsSerialiser.ByPassword.serialiserCredentialsByPassword
+import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.net.URIOps.syntax._
@@ -21,8 +21,8 @@ class HttpSpec extends AnyWordSpec with Matchers {
     "be applied against a stubbed interpreter for the simplest implementation" in {
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, Json)] =
         for {
-          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          data <- Get[Json](URI.create("https://backwards.com/api/execute"))
+          auth <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data <- Get[Json](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
       val (auth: Auth, data: Json) =
@@ -36,12 +36,12 @@ class HttpSpec extends AnyWordSpec with Matchers {
   "Http Get" should {
     "add query params" in {
       val get: Get[String] =
-        Get[String](URI.create("http://backwards.com/api"))
+        Get[String](uri("http://backwards.com/api"))
 
       val updatedGet: Get[String] =
         (uriL[String].modify(_.addParam("key1" -> "value1")) andThen uriL[String].modify(_.addParam("key2" -> "value2")))(get)
 
-      updatedGet.uri.toString mustEqual "http://backwards.com/api?key1=value1&key2=value2"
+      updatedGet.uri mustEqual uri("http://backwards.com/api?key1=value1&key2=value2")
     }
   }
 }

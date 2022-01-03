@@ -1,11 +1,11 @@
 package com.backwards.http.interpreter
 
-import java.net.URI
 import scala.concurrent.duration._
 import cats.free.Free
 import cats.implicits._
 import cats.{Id, InjectK, ~>}
 import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{HttpError, SttpBackend}
@@ -15,7 +15,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.fp.implicits.monadErrorId
-import com.backwards.http.CredentialsSerialiser.ByClientCredentials.serialiserCredentialsByClientCredentials
+import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByClientCredentials
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
@@ -44,8 +44,8 @@ class SttpIdSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          data <- Get[String](URI.create("https://backwards.com/api/execute"))
+          auth <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
       val (auth: Auth, data: String) =
@@ -68,8 +68,8 @@ class SttpIdSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          data <- Get[String](URI.create("https://backwards.com/api/execute"))
+          auth <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
       val httpError: HttpError[String] =

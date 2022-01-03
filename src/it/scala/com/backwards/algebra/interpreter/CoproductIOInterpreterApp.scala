@@ -1,19 +1,20 @@
 package com.backwards.algebra.interpreter
 
-import java.net.URI
 import cats.InjectK
 import cats.data.EitherK
 import cats.effect.{IO, IOApp}
 import cats.free.Free
 import cats.implicits._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
+import com.backwards.aws.s3.{Deserialiser, _}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
@@ -90,7 +91,7 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
     for {
       bucket    <- Bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(CreateBucketRequest(bucket))
-      data      <- Get[Json](URI.create("https://gorest.co.in/public/v1/users")).paginate
+      data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
       _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
       response  <- GetObject(GetObjectRequest(bucket, "foo"))
     } yield response

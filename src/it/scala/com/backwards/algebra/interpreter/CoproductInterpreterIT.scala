@@ -1,6 +1,5 @@
 package com.backwards.algebra.interpreter
 
-import java.net.URI
 import scala.concurrent.duration._
 import scala.util.chaining.scalaUtilChainingOps
 import cats.data.EitherK
@@ -8,6 +7,7 @@ import cats.free.Free
 import cats.implicits._
 import cats.{Id, InjectK, ~>}
 import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
 import software.amazon.awssdk.core.ResponseInputStream
@@ -30,7 +30,7 @@ import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.fp.implicits.monadErrorId
 import com.backwards.http
-import com.backwards.http.CredentialsSerialiser.ByClientCredentials.serialiserCredentialsByClientCredentials
+import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByClientCredentials
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
@@ -91,8 +91,8 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
         for {
           bucket    <- Bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(CreateBucketRequest(bucket))
-          _         <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          data      <- Get[Json](URI.create("https://backwards.com/api/execute")).paginate
+          _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
           _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
           response  <- GetObject(GetObjectRequest(bucket, "foo"))
         } yield response

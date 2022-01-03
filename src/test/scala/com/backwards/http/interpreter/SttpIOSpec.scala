@@ -1,6 +1,5 @@
 package com.backwards.http.interpreter
 
-import java.net.URI
 import scala.concurrent.duration._
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
@@ -8,6 +7,7 @@ import cats.free.Free
 import cats.implicits._
 import cats.{InjectK, ~>}
 import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client3.{HttpError, SttpBackend}
@@ -16,7 +16,7 @@ import sttp.model.StatusCode
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.backwards.auth.{Credentials, Password, User}
-import com.backwards.http.CredentialsSerialiser.ByPassword.serialiserCredentialsByPassword
+import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
@@ -49,10 +49,10 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          _    <- Post[Data, Unit](URI.create("https://backwards.com/api/post"), body = Data("blah", 2).some)
-          _    <- Put[Nothing, Unit](URI.create("https://backwards.com/api/put"))
-          data <- Get[String](URI.create("https://backwards.com/api/execute"))
+          auth <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          _    <- Post[Data, Unit](uri("https://backwards.com/api/post"), body = Data("blah", 2).some)
+          _    <- Put[Nothing, Unit](uri("https://backwards.com/api/put"))
+          data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
       val response: IO[(Auth, String)] =
@@ -78,8 +78,8 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
 
       def program(implicit I: InjectK[Http, Http]): Free[Http, (Auth, String)] =
         for {
-          auth <- Post[Credentials, Auth](URI.create("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
-          data <- Get[String](URI.create("https://backwards.com/api/execute"))
+          auth <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
       val response: IO[(Auth, String)] =
@@ -96,16 +96,17 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
 final case class Data(one: String, two: Int)
 
 object Data {
-  implicit val serialiserData: Serialiser[Data] = new Serialiser[Data] {
-    val contentType: Option[String] =
-      "application/json".some
+  implicit val serialiserData: Serialiser[Data] =
+    new Serialiser[Data] {
+      val contentType: Option[String] =
+        "application/json".some
 
-    def serialise(data: Data): Array[Byte] =
-      Json.obj(
-        "data" -> Json.obj(
-          "one" -> Json.fromString(data.one),
-          "two" -> Json.fromInt(data.two)
-        )
-      ).spaces2.getBytes
-  }
+      def serialise(data: Data): Array[Byte] =
+        Json.obj(
+          "data" -> Json.obj(
+            "one" -> Json.fromString(data.one),
+            "two" -> Json.fromInt(data.two)
+          )
+        ).spaces2.getBytes
+    }
 }

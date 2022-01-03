@@ -1,17 +1,20 @@
 package com.backwards.algebra.interpreter
 
-import java.net.URI
 import cats.InjectK
 import cats.data.EitherK
 import cats.effect.{IO, IOApp}
 import cats.free.Free
 import cats.implicits._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.util.string.uri
 import io.circe.Json
+import software.amazon.awssdk.core.ResponseInputStream
+import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3
-import com.backwards.aws.s3.S3.{CreateBucket, PutStream}
+import com.backwards.aws.s3.S3.{CreateBucket, GetObject, PutStream}
+import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, PutStreamHandle, S3}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http
@@ -89,18 +92,22 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
     }
   }
 
-  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Unit] =
+  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
     for {
-      bucket <- Bucket("my-bucket").liftFree[Algebras]
-      _      <- CreateBucket(CreateBucketRequest(bucket))
-      handle <- PutStream(bucket, "foo") // TODO - Program must not forget to call putStreamHandle.complete() - Better to have some sort of Resource like Cats
-      _      <- Get[Json](URI.create("https://gorest.co.in/public/v1/users")).paginate(handle).as(handle.complete())
-      // response  <- GetObject(GetObjectRequest(bucket, "foo"))
-    } yield ()
+      bucket  <- Bucket("my-bucket").liftFree[Algebras]
+      _         <- CreateBucket(CreateBucketRequest(bucket))
+      handle    <- PutStream(bucket, "foo")
+      // TODO - Program must not forget to call handle.complete() - Next code iteration will have some sort of Resource like Cats
+      _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(handle).as(handle.complete())
+      response  <- GetObject(GetObjectRequest(bucket, "foo"))
+    } yield response
 
   // TODO A RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
-      program.foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client)) >> backend.close()
+      program
+        .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client))
+        .map(response => scribe.info(new String(response.readAllBytes())))
+        >> backend.close()
     )
 }

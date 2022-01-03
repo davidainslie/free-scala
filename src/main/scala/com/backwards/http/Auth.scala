@@ -4,11 +4,11 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import cats._
 import cats.derived._
 import cats.implicits._
-import eu.timepit.refined.cats._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.parser._
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import com.backwards.auth.Credentials
+import com.backwards.fp.ShowRefined
 
 sealed trait Auth
 
@@ -35,7 +35,7 @@ object Basic {
 
 final case class BasicToken(token: NonEmptyString) extends Auth
 
-object BasicToken {
+object BasicToken extends ShowRefined {
   implicit val showBasicToken: Show[BasicToken] =
     semiauto.show
 }
@@ -51,7 +51,7 @@ final case class Bearer(token: NonEmptyString, expiresIn: Duration) extends Auth
   lazy val authorization: String = s"${Bearer.key} ${token.value}"
 }
 
-object Bearer {
+object Bearer extends ShowRefined {
   val key: String =
     "Bearer"
 
