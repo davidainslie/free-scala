@@ -49,11 +49,11 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
 
       // Example of paginating a Http Get
       implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
-        // TODO - Make tail recursive
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
             (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
 
+          // TODO - Make tail recursive
           def go(get: Get[Json], acc: Vector[Json], skip: Int, limit: Int): Free[F, Vector[Json]] =
             for {
               content <- paramsL[Json].modify(_ + ("skip" -> skip) + ("limit" -> limit))(get)

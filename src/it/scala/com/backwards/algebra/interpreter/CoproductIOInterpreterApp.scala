@@ -71,11 +71,11 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
-    // TODO - Make tail recursive
     def paginate: Free[F, Vector[Json]] = {
       def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
         (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
 
+      // TODO - Make tail recursive
       def go(get: Get[Json], acc: Vector[Json], page: Int): Free[F, Vector[Json]] =
         for {
           content <- paramsL[Json].modify(_ + ("page" -> page))(get)
