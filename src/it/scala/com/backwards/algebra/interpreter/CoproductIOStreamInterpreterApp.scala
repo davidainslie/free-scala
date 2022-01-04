@@ -1,7 +1,8 @@
 package com.backwards.algebra.interpreter
 
+import scala.util.Try
 import cats.InjectK
-import cats.data.EitherK
+import cats.data.{EitherK, EitherT}
 import cats.effect.{IO, IOApp}
 import cats.free.Free
 import cats.implicits._
@@ -102,9 +103,8 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   // TODO A RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
-      program
-        .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client))
-        .map(response => scribe.info(new String(response.readAllBytes)))
-        >> backend.close()
+      EitherT(program.foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client)).attempt)
+        .subflatMap(response => Try(new String(response.readAllBytes)).toEither)
+        .fold(scribe.error(_), scribe.info(_)) >> backend.close()
     )
 }
