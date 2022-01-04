@@ -1,7 +1,6 @@
 package com.backwards.aws.s3.interpreter
 
 import java.util.concurrent.CompletableFuture
-import alex.mojaki.s3upload.{MultiPartOutputStream, StreamTransferManager}
 import cats.effect.IO
 import cats.implicits._
 import cats.~>
@@ -35,15 +34,7 @@ object S3IOInterpreter {
             IO.fromCompletableFuture(IO(putObjectResponseFuture)).map(_.asInstanceOf[A])
 
           case PutStream(bucket, key) =>
-            IO {
-              val manager: StreamTransferManager =
-                new StreamTransferManager(bucket.name, key, s3Client.v1.sync)
-
-              val outputStream: MultiPartOutputStream =
-                manager.getMultiPartOutputStreams.get(0)
-
-              PutStreamHandle(manager, outputStream).asInstanceOf[A]
-            }
+            IO(PutStreamHandle(s3Client, bucket, key).asInstanceOf[A])
 
           case GetObject(request) =>
             val asyncResponseTransformer: AsyncResponseTransformer[GetObjectResponse, ResponseBytes[GetObjectResponse]] =

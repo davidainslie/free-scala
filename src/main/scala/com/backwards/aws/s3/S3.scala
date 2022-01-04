@@ -32,7 +32,6 @@ object S3 {
       resource(free).use(f)
     }
 
-    // TODO - Test for error (and then change code accordingly) to either call "complete" or possibly new type class behaviour that accepts error.
     def resource(acquire: => Free[F, PutStreamHandle]): Resource[Free[F, *], PutStreamHandle] =
       new Resource[Free[F, *], PutStreamHandle] {
         override def use[B](f: PutStreamHandle => Free[F, B]): Free[F, B] =
