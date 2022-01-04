@@ -9,7 +9,7 @@ object FreeOps {
         Free.pure[F, A](self)
     }
 
-    implicit class XExtension[S[_], A](fa: Free[S, A]) {
+    implicit class FreeExtension[S[_], A](fa: Free[S, A]) {
       def as[B](b: => B): Free[S, B] =
         fa.map(_ => b)
     }

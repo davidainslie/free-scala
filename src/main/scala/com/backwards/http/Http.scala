@@ -8,7 +8,7 @@ import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 
-sealed trait Http[A]
+sealed trait Http[A] extends Product with Serializable
 
 // TODO - Factor out repetition in companion objects
 object Http {

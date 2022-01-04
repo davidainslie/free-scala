@@ -34,11 +34,9 @@ Take a look at the example code [CoproductIOStreamInterpreterApp](src/it/scala/c
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
   for {
-    bucket  <- Bucket("my-bucket").liftFree[Algebras]
+    bucket    <- Bucket("my-bucket").liftFree[Algebras]
     _         <- CreateBucket(CreateBucketRequest(bucket))
-    handle    <- PutStream(bucket, "foo")
-    // TODO - Program must not forget to call handle.complete() - Next code iteration will have some sort of Resource like Cats
-    _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(handle).as(handle.complete())
+    _         <- PutStream(bucket, "foo").use(Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate)
     response  <- GetObject(GetObjectRequest(bucket, "foo"))
   } yield response
 ```

@@ -12,7 +12,7 @@ import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3
-import com.backwards.aws.s3.S3.{CreateBucket, GetObject, PutStream}
+import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.docker.aws.WithAwsContainer
@@ -72,7 +72,6 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
-    // TODO - Make tail recursive
     def paginate(putStreamHandle: PutStreamHandle): Free[Algebras, Unit] = {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] =
         paramsL[Json].modify(_ + ("page" -> page))(get).flatMap { json =>
@@ -94,11 +93,9 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
 
   def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
     for {
-      bucket  <- Bucket("my-bucket").liftFree[Algebras]
+      bucket    <- Bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(CreateBucketRequest(bucket))
-      handle    <- PutStream(bucket, "foo")
-      // TODO - Program must not forget to call handle.complete() - Next code iteration will have some sort of Resource like Cats
-      _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(handle).as(handle.complete())
+      _         <- PutStream(bucket, "foo").use(Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate)
       response  <- GetObject(GetObjectRequest(bucket, "foo"))
     } yield response
 
