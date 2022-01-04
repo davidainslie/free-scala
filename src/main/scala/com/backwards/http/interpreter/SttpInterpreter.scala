@@ -1,6 +1,6 @@
 package com.backwards.http.interpreter
 
-import cats.implicits.toFlatMapOps
+import cats.implicits._
 import cats.{MonadError, ~>}
 import eu.timepit.refined.auto._
 import sttp.client3._
@@ -27,10 +27,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(response =>
                 response.body.fold(
-                  errorMsg => {
-                    println(errorMsg)
-                    MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code))
-                  },
+                  errorMsg => MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code)),
                   _.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a))
                 )
               )
@@ -46,10 +43,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(response =>
                 response.body.fold(
-                  errorMsg => {
-                    println(errorMsg)
-                    MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code))
-                  },
+                  errorMsg => MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code)),
                   _.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a))
                 )
               )
@@ -63,10 +57,7 @@ object SttpInterpreter {
               .send(backend)
               .flatMap(response =>
                 response.body.fold(
-                  errorMsg => {
-                    println(errorMsg)
-                    MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code))
-                  },
+                  errorMsg => MonadError[F, Throwable].raiseError(HttpError(errorMsg, response.code)),
                   _.fold(MonadError[F, Throwable].raiseError, a => MonadError[F, Throwable].pure(a))
                 )
               )
