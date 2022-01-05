@@ -53,7 +53,6 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
             (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
 
-          // TODO - Make tail recursive
           def go(get: Get[Json], acc: Vector[Json], skip: Int, limit: Int): Free[F, Vector[Json]] =
             for {
               content <- paramsL[Json].modify(_ + ("skip" -> skip) + ("limit" -> limit))(get)
@@ -100,7 +99,9 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
+        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
+          program.foldMap(SttpInterpreter() or s3Interpreter)
+        }
 
       val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
         response.attempt.unsafeRunSync()
@@ -139,7 +140,9 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
+        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
+          program.foldMap(SttpInterpreter() or s3Interpreter)
+        }
 
       val Left(error: HttpError[_]) =
         response.attempt.unsafeRunSync()
@@ -188,7 +191,9 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(SttpInterpreter() or S3IOInterpreter(s3Client))
+        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
+          program.foldMap(SttpInterpreter() or s3Interpreter)
+        }
 
       // Our program fails when accessing the wrong key
       response.attempt.unsafeRunSync().left.value mustBe a [NoSuchKeyException]

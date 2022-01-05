@@ -11,8 +11,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
-import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3}
 import com.backwards.aws.s3.S3._
+import com.backwards.aws.s3._
 import com.backwards.docker.aws.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 
@@ -38,7 +38,7 @@ class S3IOInterpreterIT extends AnyWordSpec with Matchers with ForAllTestContain
         } yield response
 
       val response: IO[ResponseInputStream[GetObjectResponse]] =
-        program.foldMap(S3IOInterpreter(s3Client))
+        S3IOInterpreter.resource(s3Client).use(program.foldMap(_))
 
       val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
         response.attempt.unsafeRunSync()

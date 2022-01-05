@@ -19,7 +19,7 @@ object S3Interpreter {
           case PutObject(request, body) =>
             s3Client.v2.sync.putObject(request, body).asInstanceOf[A]
 
-          case PutStream(bucket, key) =>
+          case PutStream(bucket, key, data, serialiser) =>
             ??? // TODO
 
           case GetObject(request) =>

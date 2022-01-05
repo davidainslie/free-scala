@@ -1,8 +1,9 @@
 package com.backwards.algebra.interpreter
 
+import scala.util.Try
 import cats.InjectK
 import cats.data.EitherK
-import cats.effect.{IO, IOApp}
+import cats.effect.{IO, IOApp, Resource}
 import cats.free.Free
 import cats.implicits._
 import eu.timepit.refined.auto._
@@ -75,12 +76,11 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
       def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
         (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
 
-      // TODO - Make tail recursive
       def go(get: Get[Json], acc: Vector[Json], page: Int): Free[F, Vector[Json]] =
         for {
           content <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          pages = (content \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
-          data <- if (page < pages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
+          pages   = (content \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
+          data    <- if (page < pages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
         } yield data
 
       go(get, acc = Vector.empty, page = 1)
@@ -96,12 +96,9 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
       response  <- GetObject(GetObjectRequest(bucket, "foo"))
     } yield response
 
-  // TODO A RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
+  // TODO Could try RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
-    AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
-      program
-        .foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client))
-        .map(response => scribe.info(new String(response.readAllBytes)))
-        >> backend.close()
-    )
+    Resource.both(AsyncHttpClientCatsBackend.resource[IO](), S3IOInterpreter.resource(s3Client)).use { case (backend, s3Interpreter) =>
+      program.foldMap(SttpInterpreter(backend.logging) or s3Interpreter)
+    } >>= (response => IO.fromEither(Try(new String(response.readAllBytes)).toEither)) >>= (result => IO(scribe.info(result)))
 }

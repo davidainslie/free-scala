@@ -12,9 +12,6 @@ sealed trait Http[A] extends Product with Serializable
 
 // TODO - Factor out repetition in companion objects
 object Http {
-  implicit def httpToFree[F[_]: InjectK[Http, *[_]], A](fa: Http[A]): Free[F, A] =
-    liftInject[F](fa)
-
   final case class Post[A, B](uri: URI, headers: Headers, params: Params, auth: Option[Auth], body: Option[A], serialiser: Serialiser[A], deserialiser: Deserialiser[B]) extends Http[B]
 
   final case class Put[A, B](uri: URI, headers: Headers, params: Params, auth: Option[Auth], body: Option[A], serialiser: Serialiser[A], deserialiser: Deserialiser[B]) extends Http[B]
@@ -62,4 +59,7 @@ object Http {
     def apply[B](uri: URI, headers: Headers = Headers(), params: Params = Params(), auth: Option[Auth] = None)(implicit deserialiser: Deserialiser[B], dummy: DummyImplicit): Get[B] =
       apply(uri, headers, params, auth, deserialiser)
   }
+
+  implicit def httpToFree[F[_]: InjectK[Http, *[_]], A](fa: Http[A]): Free[F, A] =
+    liftInject[F](fa)
 }
