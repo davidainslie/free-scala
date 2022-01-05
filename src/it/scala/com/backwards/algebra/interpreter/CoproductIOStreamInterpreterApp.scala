@@ -10,7 +10,7 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import software.amazon.awssdk.core.ResponseInputStream
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
+import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3
 import com.backwards.aws.s3.S3._
@@ -73,30 +73,30 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
-    def paginate(putStreamHandle: PutStreamHandle): Free[Algebras, Unit] = {
-      def go(get: Get[Json], page: Int): Free[Algebras, Unit] =
-        paramsL[Json].modify(_ + ("page" -> page))(get).flatMap { json =>
-          val data: Vector[Json] =
-            (json \ "data").flatMap(_.asArray).toVector.flatten
+    // def paginate(putStreamHandle: PutStreamHandle): Free[Algebras, Unit] = {
+    def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
+      def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
+        for {
+          json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
+          data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
+          // _ <- PutStream(bucket, key, data).liftFree[Algebras].when(data.nonEmpty, ().liftFree[Algebras])
+          _ <- if (data.nonEmpty) S3.s3ToFree(PutStream(bucket, key, data)) else ().liftFree[Algebras]
+          _ <-  (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras]
+          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
+          _     <- if (page < pages) go(get, page + 1) else ().liftFree[Algebras]
+        } yield ()
+      }
 
-          if (data.nonEmpty) putStreamHandle.write(data)
-
-          val pages: Int =
-            (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
-
-          if (page < pages) go(get, page + 1)
-          else ().liftFree[Algebras]
-        }
-
-      go(get, page = 1)
+      go(get, page = 1).flatMap(_ => CompletePutStream(bucket, key))
     }
   }
 
   def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
     for {
-      bucket    <- Bucket("my-bucket").liftFree[Algebras]
+      bucket    <- com.backwards.aws.s3.Bucket("my-bucket").liftFree[Algebras] // TODO - Sort out S3 proxies
       _         <- CreateBucket(CreateBucketRequest(bucket))
-      _         <- PutStream(bucket, "foo").use(Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate)
+      //_         <- PutStream(bucket, "foo").use(Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate)
+      _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
       response  <- GetObject(GetObjectRequest(bucket, "foo"))
     } yield response
 
@@ -105,6 +105,7 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
       EitherT(program.foldMap(SttpInterpreter(backend.logging) or S3IOInterpreter(s3Client)).attempt)
         .subflatMap(response => Try(new String(response.readAllBytes)).toEither)
-        .fold(scribe.error(_), scribe.info(_)) >> backend.close()
+        //.fold(scribe.error(_), scribe.info(_)) >> backend.close()
+        .fold(scribe.error(_), x => scribe.info(x.substring(0, 10))) >> backend.close()
     )
 }

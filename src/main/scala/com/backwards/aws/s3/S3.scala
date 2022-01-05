@@ -16,18 +16,23 @@ import com.backwards.fp.Resource
 sealed trait S3[A] extends Product with Serializable
 
 object S3 {
-  implicit def s3ToFree[F[_]: InjectK[S3, *[_]], A](fa: S3[A]): Free[F, A] =
-    liftInject[F](fa)
-
   final case class CreateBucket(request: CreateBucketRequest) extends S3[CreateBucketResponse]
 
   final case class PutObject(request: PutObjectRequest, body: RequestBody) extends S3[PutObjectResponse]
 
-  final case class PutStream(bucket: Bucket, key: String) extends S3[PutStreamHandle]
+  // final case class PutStream(bucket: Bucket, key: String) extends S3[PutStreamHandle]
+  final case class PutStream[A](bucket: Bucket, key: String, data: A, serialiser: Serialiser[A]) extends S3[A/*PutStreamHandle*/]
+
+  final case class CompletePutStream(bucket: Bucket, key: String) extends S3[Unit]
 
   final case class GetObject(request: GetObjectRequest) extends S3[ResponseInputStream[GetObjectResponse]]
 
-  implicit class PutStreamExtension[F[_]](free: Free[F, PutStreamHandle]) {
+  object PutStream {
+    def apply[A](bucket: Bucket, key: String, data: A)(implicit serialiser: Serialiser[A], dummy: DummyImplicit): PutStream[A] =
+      apply(bucket, key, data, serialiser)
+  }
+
+  /*implicit class PutStreamExtension[F[_]](free: Free[F, PutStreamHandle]) {
     def use[B](f: PutStreamHandle => Free[F, B]): Free[F, B] = {
       resource(free).use(f)
     }
@@ -44,5 +49,8 @@ object S3 {
   }
 
   implicit def putStreamExtension[F[_]: InjectK[S3, *[_]]](putStream: PutStream): PutStreamExtension[F] =
-    PutStreamExtension(s3ToFree(putStream))
+    PutStreamExtension(s3ToFree(putStream))*/
+
+  implicit def s3ToFree[F[_]: InjectK[S3, *[_]], A](fa: S3[A]): Free[F, A] =
+    liftInject[F](fa)
 }

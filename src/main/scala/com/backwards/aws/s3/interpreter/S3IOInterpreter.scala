@@ -1,16 +1,18 @@
 package com.backwards.aws.s3.interpreter
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
+import alex.mojaki.s3upload.{MultiPartOutputStream, StreamManager}
 import cats.effect.IO
 import cats.implicits._
 import cats.~>
 import software.amazon.awssdk.core.async.{AsyncRequestBody, AsyncResponseTransformer}
 import software.amazon.awssdk.core.{ResponseBytes, ResponseInputStream}
 import software.amazon.awssdk.http.AbortableInputStream
-import software.amazon.awssdk.services.s3.model.{GetObjectResponse, PutObjectResponse}
+import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse, PutObjectResponse}
 import com.amazonaws.util.IOUtils
 import com.backwards.aws.s3.S3._
-import com.backwards.aws.s3.{PutStreamHandle, S3, S3Client}
+import com.backwards.aws.s3.{PutStreamHandle, S3, S3Client, Serialiser}
 
 /**
  * Asynchronous S3 Algebra Interpreter
@@ -19,6 +21,12 @@ import com.backwards.aws.s3.{PutStreamHandle, S3, S3Client}
 object S3IOInterpreter {
   def apply(s3Client: S3Client): S3 ~> IO =
     new (S3 ~> IO) {
+      /*val putStreamHandles: AtomicReference[Map[(Bucket, String), PutStreamHandle]] =
+        new AtomicReference[Map[(Bucket, String), PutStreamHandle]]()*/
+
+      val putStreamHandles: AtomicReference[Map[String, PutStreamHandle]] =
+        new AtomicReference(Map.empty[String, PutStreamHandle])
+
       override def apply[A](fa: S3[A]): IO[A] =
         fa match {
           case CreateBucket(request) =>
@@ -33,8 +41,68 @@ object S3IOInterpreter {
 
             IO.fromCompletableFuture(IO(putObjectResponseFuture)).map(_.asInstanceOf[A])
 
-          case PutStream(bucket, key) =>
-            IO(PutStreamHandle(s3Client, bucket, key).asInstanceOf[A])
+          case PutStream(bucket, key, data, serialiser) =>
+            IO {
+
+              putStreamHandles.getAndUpdate { hs =>
+                hs.updatedWith(key) {
+                  case Some(h) =>
+                    try {
+                      scribe.info(s"Writing output stream write to S3 bucket = $bucket, key = $key")
+                      h.outputStream.write(serialiser.serialise(data))
+                      h.some
+                    } catch {
+                      case t: Throwable =>
+                        scribe.error(s"Aborting output stream write to S3 bucket = $bucket, key = $key", t)
+                        h.streamManager.abort()
+                        h.some
+                    }
+                  case None =>
+                    val h = PutStreamHandle(s3Client, bucket, key)
+
+                    try {
+                      scribe.info(s"Writing new output stream write to S3 bucket = $bucket, key = $key")
+                      h.outputStream.write(serialiser.serialise(data))
+                      h.some
+                    } catch {
+                      case t: Throwable =>
+                        scribe.error(s"Aborting output stream write to S3 bucket = $bucket, key = $key", t)
+                        h. streamManager.abort()
+                        h.some
+                    }
+                }
+            }
+
+              data
+            }
+
+          case CompletePutStream(bucket: Bucket, key: String) =>
+            IO {
+              putStreamHandles.getAndUpdate { hs =>
+                hs.get(key).foreach(h => h.complete())
+                hs - key
+              }
+            }.attempt.map {
+              case Left(t) =>
+                println(s"=====> LEFT")
+                putStreamHandles.getAndUpdate { hs =>
+                  hs.get(key).foreach(h => h.abort(t))
+                  hs - key
+                }
+
+                ().asInstanceOf[A]
+
+              case Right(m) =>
+                println(s"=====> RIGHT")
+                putStreamHandles.getAndUpdate { hs =>
+                  hs.get(key).foreach(h => h.complete())
+                  hs - key
+                }
+
+                ().asInstanceOf[A]
+            }
+
+            //>> IO.unit.map(_.asInstanceOf[A])
 
           case GetObject(request) =>
             val asyncResponseTransformer: AsyncResponseTransformer[GetObjectResponse, ResponseBytes[GetObjectResponse]] =
