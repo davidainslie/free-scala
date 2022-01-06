@@ -16,7 +16,8 @@ final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String
     } catch {
       case t: Throwable =>
         scribe.error(s"Aborting output stream write to S3", t)
-        streamManager.abort()
+        outputStream.close()
+        streamManager.abort(t)
     }
 
   def complete(): Unit =
@@ -33,11 +34,12 @@ final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String
   def abort(t: Throwable): Unit =
     try {
       scribe.error(s"Aboring Put Stream")
-      // outputStream.close()
+      outputStream.close()
       streamManager.abort(t)
     } catch {
       case t: Throwable =>
         scribe.error(s"Aborting completion of output stream to S3", t)
+        outputStream.close()
         streamManager.abort()
     }
 }
