@@ -49,35 +49,18 @@ object S3IOInterpreter {
 
           case PutStream(bucket, key, data, serialiser) =>
             IO {
-
               putStreamHandles.getAndUpdate { hs =>
                 hs.updatedWith(key) {
                   case Some(h) =>
-                    try {
-                      scribe.info(s"Writing output stream to S3 bucket = $bucket, key = $key")
-                      h.outputStream.write(serialiser.serialise(data))
-                      h.some
-                    } catch {
-                      case t: Throwable =>
-                        scribe.error(s"Aborting output stream to S3 bucket = $bucket, key = $key", t)
-                        h.streamManager.abort()
-                        h.some
-                    }
+                    h.write(data)(serialiser)
+                    h.some
+
                   case None =>
                     val h = PutStreamHandle(s3Client, bucket, key)
-
-                    try {
-                      scribe.info(s"Writing new output stream write to S3 bucket = $bucket, key = $key")
-                      h.outputStream.write(serialiser.serialise(data))
-                      h.some
-                    } catch {
-                      case t: Throwable =>
-                        scribe.error(s"Aborting output stream write to S3 bucket = $bucket, key = $key", t)
-                        h. streamManager.abort()
-                        h.some
-                    }
+                    h.write(data)(serialiser)
+                    h.some
                 }
-            }
+              }
 
               data
             }
@@ -88,27 +71,7 @@ object S3IOInterpreter {
                 hs.get(key).foreach(h => h.complete())
                 hs - key
               }
-            }.attempt.map {
-              case Left(t) =>
-                println(s"=====> LEFT")
-                putStreamHandles.getAndUpdate { hs =>
-                  hs.get(key).foreach(h => h.abort(t))
-                  hs - key
-                }
-
-                ().asInstanceOf[A]
-
-              case Right(m) =>
-                println(s"=====> RIGHT")
-                putStreamHandles.getAndUpdate { hs =>
-                  hs.get(key).foreach(h => h.complete())
-                  hs - key
-                }
-
-                ().asInstanceOf[A]
-            }
-
-            //>> IO.unit.map(_.asInstanceOf[A])
+            } >> IO.unit.map(_.asInstanceOf[A])
 
           case GetObject(request) =>
             val asyncResponseTransformer: AsyncResponseTransformer[GetObjectResponse, ResponseBytes[GetObjectResponse]] =

@@ -12,34 +12,35 @@ final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String
 
   def write[A: Serialiser](data: A): Unit =
     try {
+      scribe.info(s"PutStream write to S3 bucket = $bucket, key = $key")
       outputStream.write(Serialiser[A].serialise(data))
     } catch {
       case t: Throwable =>
-        scribe.error(s"Aborting output stream write to S3", t)
+        scribe.error(s"Aborting write of PutStream", t)
         outputStream.close()
         streamManager.abort(t)
     }
 
   def complete(): Unit =
     try {
-      scribe.info(s"Completing Put Stream")
+      scribe.info(s"Completing PutStream")
       outputStream.close()
       streamManager.complete()
     } catch {
       case t: Throwable =>
-        scribe.error(s"Aborting completion of output stream to S3", t)
+        scribe.error(s"Aborting completion of PutStream", t)
         streamManager.abort()
     }
 
   def abort(t: Throwable): Unit =
     try {
-      scribe.error(s"Aboring Put Stream")
+      scribe.error(s"Aborting PutStream")
       outputStream.close()
       streamManager.abort(t)
     } catch {
       case t: Throwable =>
-        scribe.error(s"Aborting completion of output stream to S3", t)
+        scribe.error(s"Aborting PutStream", t)
         outputStream.close()
-        streamManager.abort()
+        streamManager.abort(t)
     }
 }
