@@ -25,7 +25,7 @@ object S3IOInterpreter {
   private val putStreamHandles: AtomicReference[Map[String, PutStreamHandle]] =
     new AtomicReference(Map.empty[String, PutStreamHandle])
 
-  def abort(t: Throwable): Throwable = {
+  def failure(t: Throwable): Throwable = {
     println("====> aha")
     putStreamHandles.get.values.foreach(_.abort(t))
     t

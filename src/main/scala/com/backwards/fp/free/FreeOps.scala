@@ -10,8 +10,8 @@ object FreeOps {
     }
 
     implicit class FreeExtension[S[_], A](fa: Free[S, A]) {
-      def as[B](b: => B): Free[S, B] =
-        fa.map(_ => b)
+      def as[B](b: => Free[S, B]): Free[S, B] =
+        fa.flatMap(_ => b)
 
       def when[B](check: => Boolean, otherwise: Free[S, B]) =
         if (check) fa else otherwise
