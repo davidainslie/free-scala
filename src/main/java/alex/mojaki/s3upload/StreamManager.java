@@ -331,13 +331,13 @@ public class StreamManager {
             multiPartOutputStreams = new ArrayList<MultiPartOutputStream>();
 
             // TODO David Ainslie - Sort out hack where thread pool has been changed to daemons allowing stream manager shutdown when used by Free Monads
-            // ExecutorService threadPool = Executors.newFixedThreadPool(numUploadThreads);
+            ExecutorService threadPool = Executors.newFixedThreadPool(numUploadThreads);
 
-            ExecutorService threadPool = Executors.newFixedThreadPool(numUploadThreads, runnable -> {
+            /*ExecutorService threadPool = Executors.newFixedThreadPool(numUploadThreads, runnable -> {
                 Thread t = Executors.defaultThreadFactory().newThread(runnable);
                 t.setDaemon(true);
                 return t;
-            });
+            });*/
 
             int partNumberStart = 1;
 

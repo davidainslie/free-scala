@@ -1,7 +1,7 @@
 package com.backwards.algebra.interpreter
 
 import scala.util.Try
-import cats.InjectK
+import cats.{InjectK, ~>}
 import cats.data.{EitherK, EitherT}
 import cats.effect.{IO, IOApp}
 import cats.free.Free
@@ -81,7 +81,7 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
           data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
           // _ <- PutStream(bucket, key, data).liftFree[Algebras].when(data.nonEmpty, ().liftFree[Algebras])
           _ <- if (data.nonEmpty) S3.s3ToFree(PutStream(bucket, key, data)) else ().liftFree[Algebras]
-          //_ <-  (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras]
+          _ <-  (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras]
           pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
           _     <- if (page < pages) go(get, page + 1) else ().liftFree[Algebras]
         } yield ()
@@ -104,6 +104,7 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
       EitherT(program.foldMap(SttpInterpreter(backend/*.logging*/) or S3IOInterpreter(s3Client)).attempt)
+        .leftMap(S3IOInterpreter.abort)
         .subflatMap(response => Try(new String(response.readAllBytes)).toEither)
         .fold(scribe.error(_), scribe.info(_)) >> backend.close()
     )

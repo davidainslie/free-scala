@@ -19,14 +19,20 @@ import com.backwards.aws.s3.{PutStreamHandle, S3, S3Client, Serialiser}
  * TODO - Regarding non-stream cases, there is a fs2 S3 library that could be spiked.
  */
 object S3IOInterpreter {
-  def apply(s3Client: S3Client): S3 ~> IO =
-    new (S3 ~> IO) {
-      /*val putStreamHandles: AtomicReference[Map[(Bucket, String), PutStreamHandle]] =
+  /*val putStreamHandles: AtomicReference[Map[(Bucket, String), PutStreamHandle]] =
         new AtomicReference[Map[(Bucket, String), PutStreamHandle]]()*/
 
-      val putStreamHandles: AtomicReference[Map[String, PutStreamHandle]] =
-        new AtomicReference(Map.empty[String, PutStreamHandle])
+  private val putStreamHandles: AtomicReference[Map[String, PutStreamHandle]] =
+    new AtomicReference(Map.empty[String, PutStreamHandle])
 
+  def abort(t: Throwable): Throwable = {
+    println("====> aha")
+    putStreamHandles.get.values.foreach(_.abort(t))
+    t
+  }
+
+  def apply(s3Client: S3Client): S3 ~> IO =
+    new (S3 ~> IO) {
       override def apply[A](fa: S3[A]): IO[A] =
         fa match {
           case CreateBucket(request) =>
@@ -48,12 +54,12 @@ object S3IOInterpreter {
                 hs.updatedWith(key) {
                   case Some(h) =>
                     try {
-                      scribe.info(s"Writing output stream write to S3 bucket = $bucket, key = $key")
+                      scribe.info(s"Writing output stream to S3 bucket = $bucket, key = $key")
                       h.outputStream.write(serialiser.serialise(data))
                       h.some
                     } catch {
                       case t: Throwable =>
-                        scribe.error(s"Aborting output stream write to S3 bucket = $bucket, key = $key", t)
+                        scribe.error(s"Aborting output stream to S3 bucket = $bucket, key = $key", t)
                         h.streamManager.abort()
                         h.some
                     }
