@@ -104,7 +104,7 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple with WithAwsContaine
   def run: IO[Unit] =
     AsyncHttpClientCatsBackend[IO]().flatMap(backend =>
       EitherT(program.foldMap(SttpInterpreter(backend/*.logging*/) or S3IOInterpreter(s3Client)).attempt)
-        .leftMap(S3IOInterpreter.failure)
+        .leftSemiflatTap(t => IO(S3IOInterpreter.failure(t)))
         .subflatMap(response => Try(new String(response.readAllBytes)).toEither)
         .fold(scribe.error(_), scribe.info(_)) >> backend.close()
     )
