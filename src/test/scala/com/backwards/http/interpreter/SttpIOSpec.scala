@@ -2,7 +2,7 @@ package com.backwards.http.interpreter
 
 import scala.concurrent.duration._
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
+import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.free.Free
 import cats.implicits._
 import cats.{InjectK, ~>}
@@ -14,14 +14,15 @@ import sttp.client3.{HttpError, SttpBackend}
 import sttp.model.Method._
 import sttp.model.StatusCode
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.wordspec.AsyncWordSpec
 import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
+import com.backwards.util.EitherOps.syntax.EitherExtension
 
-class SttpIOSpec extends AnyWordSpec with Matchers {
+class SttpIOSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
   "Http Algebra" should {
     "be applied against an async interpreter" in {
       object SttpInterpreter {
@@ -55,14 +56,10 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
           data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
-      val response: IO[(Auth, String)] =
-        program.foldMap(SttpInterpreter())
-
-      val Right((auth: Auth, data: String)) =
-        response.attempt.unsafeRunSync()
-
-      auth mustEqual SttpInterpreter.bearer
-      data mustEqual SttpInterpreter.data
+      program.foldMap(SttpInterpreter()).attempt.map(_.rightValue).map { case (auth, data) =>
+        auth mustEqual SttpInterpreter.bearer
+        data mustEqual SttpInterpreter.data
+      }
     }
 
     "be applied against an async interpreter where exceptions are captured via MonadError" in {
@@ -82,13 +79,9 @@ class SttpIOSpec extends AnyWordSpec with Matchers {
           data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
-      val response: IO[(Auth, String)] =
-        program.foldMap(SttpInterpreter())
-
-      val Left(error: HttpError[_]) =
-        response.attempt.unsafeRunSync()
-
-      error.statusCode mustEqual StatusCode.InternalServerError
+      program.foldMap(SttpInterpreter()).attempt.map(_.leftValue).map { case HttpError(_, statusCode) =>
+        statusCode mustEqual StatusCode.InternalServerError
+      }
     }
   }
 }

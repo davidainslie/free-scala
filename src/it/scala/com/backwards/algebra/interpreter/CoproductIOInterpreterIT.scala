@@ -1,7 +1,6 @@
 package com.backwards.algebra.interpreter
 
 import scala.concurrent.duration._
-import scala.util.chaining.scalaUtilChainingOps
 import cats.data.EitherK
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
@@ -12,6 +11,7 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
+import io.circe.parser._
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.{GetObjectResponse, NoSuchKeyException}
@@ -21,7 +21,6 @@ import sttp.model.Method._
 import sttp.model.StatusCode
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, Inspectors}
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.auth.{Credentials, Password, User}
@@ -35,9 +34,10 @@ import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.util.EitherOps.syntax._
 import com.backwards.{aws, http}
 
-class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValues with Inspectors with ForAllTestContainer with AwsContainer {
+class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
@@ -98,19 +98,10 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(GetObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
-        response.attempt.unsafeRunSync()
-
-      new String(responseAttempt.readAllBytes).pipe(data =>
-        forAll(List(SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2))(dataEntry =>
-          data must include (dataEntry.noSpaces)
-        )
-      )
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter))
+        .map(response =>
+          new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
+      ).unsafeRunSync()
     }
 
     "be applied against async interpreters where Http exceptions are captured via MonadError" in withS3(container) { s3Client =>
@@ -139,15 +130,8 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(aws.s3.GetObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      val Left(error: HttpError[_]) =
-        response.attempt.unsafeRunSync()
-
-      error.statusCode mustEqual StatusCode.InternalServerError
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map(_.leftValue)
+        .map { case HttpError(_, statusCode) => statusCode mustEqual StatusCode.InternalServerError }.unsafeRunSync()
     }
 
     "be applied against async interpreters where S3 exceptions are captured via MonadError" in withS3(container) { s3Client =>
@@ -190,13 +174,8 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(aws.s3.GetObjectRequest(bucket, "WHOOPS"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      // Our program fails when accessing the wrong key
-      response.attempt.unsafeRunSync().left.value mustBe a [NoSuchKeyException]
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter))
+        .attempt.map(_.leftValue).map(_ mustBe a [NoSuchKeyException]).unsafeRunSync()
     }
   }
 }

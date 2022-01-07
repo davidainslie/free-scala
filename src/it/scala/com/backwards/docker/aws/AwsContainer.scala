@@ -1,5 +1,6 @@
 package com.backwards.docker.aws
 
+import cats.effect.Sync
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import software.amazon.awssdk.regions.Region
@@ -16,15 +17,25 @@ import com.backwards.aws.s3.S3Client
  * View object e.g.
  *  - aws --endpoint-url=http://127.0.0.1:54998 s3 cp s3://my-bucket/foo -
  */
-trait AwsContainer {
+trait AwsContainer { self =>
+  private def s3Client(container: LocalStackContainer): S3Client =
+    S3Client(
+      Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
+      Region.of(container.container.getRegion),
+      container.container.getEndpointOverride(Service.S3).some
+    )
+
   def withS3(container: LocalStackContainer)(test: S3Client => Assertion): Assertion = {
     val s3Client: S3Client =
-      S3Client(
-        Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
-        Region.of(container.container.getRegion),
-        container.container.getEndpointOverride(Service.S3).some
-      )
+      self.s3Client(container)
 
     try test(s3Client) finally s3Client.close()
+  }
+
+  def withSyncS3[F[_]: Sync](container: LocalStackContainer)(test: S3Client => F[Assertion]): F[Assertion] = {
+    val s3Client: S3Client =
+      self.s3Client(container)
+
+    try test(s3Client) finally Sync[F].delay(s3Client.close())
   }
 }
