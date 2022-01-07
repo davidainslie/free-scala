@@ -23,7 +23,7 @@ trait WithAwsContainer {
   container.start()
 
   sys.addShutdownHook(
-    Try(s3Client.close()) >> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) >> Try(container.stop())
+    (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
   )
 
   /*

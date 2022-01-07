@@ -10,11 +10,8 @@ import com.backwards.auth.Credentials
 import com.backwards.fp.FunctionOps.syntax._
 
 final case class S3Client(credentials: Credentials, region: Region, endpoint: Option[URI] = None) {
-  def close(): Unit = {
-    scribe.info("Closing S3 Client")
-
-    Try(v1.sync.shutdown()) >> Try(v2.sync.close()) >> Try(v2.async.close())
-  }
+  def close(): Unit =
+    (Try(scribe.info("Closing S3 Client")) *> Try(v1.sync.shutdown()) *> Try(v2.sync.close()) *> Try(v2.async.close())).fold(throw _, identity)
 
   object v1 {
     import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}

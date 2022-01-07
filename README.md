@@ -25,6 +25,22 @@ def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free
     _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
     response  <- GetObject(GetObjectRequest(bucket, "foo"))
   } yield response
+  
+// Where "paginate" is an extension method:
+def paginate: Free[F, Vector[Json]] = {
+  def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
+    (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
+
+  def go(get: Get[Json], acc: Vector[Json], page: Int): Free[F, Vector[Json]] =
+    for {
+      content <- paramsL[Json].modify(_ + ("page" -> page))(get)
+      pages   = (content \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
+      data    <- if (page < pages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
+    } yield data
+
+  go(get, acc = Vector.empty, page = 1)
+}
+}
 ```
 
 ### Get paginated Http streaming each page to S3 completing as one Object
@@ -34,9 +50,24 @@ Take a look at the example code [CoproductIOStreamInterpreterApp](src/it/scala/c
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
   for {
-    bucket    <- Bucket("my-bucket").liftFree[Algebras]
+    bucket    <- com.backwards.aws.s3.Bucket("my-bucket").liftFree[Algebras]
     _         <- CreateBucket(CreateBucketRequest(bucket))
-    _         <- PutStream(bucket, "foo").use(Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate)
+    _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
     response  <- GetObject(GetObjectRequest(bucket, "foo"))
   } yield response
+  
+// Where "paginate" is an extension method:
+def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
+  def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
+    for {
+      json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
+      data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
+      _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+      pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
+      _     <- if (page < pages) go(get, page + 1) else unit[Algebras]
+    } yield ()
+  }
+
+  go(get, page = 1).as(CompletePutStream(bucket, key))
+}
 ```

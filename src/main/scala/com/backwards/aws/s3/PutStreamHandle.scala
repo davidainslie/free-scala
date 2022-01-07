@@ -1,32 +1,49 @@
 package com.backwards.aws.s3
 
-import alex.mojaki.s3upload.{MultiPartOutputStream, StreamManager}
+import scala.util.Try
+import alex.mojaki.s3upload.{MultiPartOutputStream, StreamTransferManager}
 import software.amazon.awssdk.services.s3.model.Bucket
 
 final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String) {
-  lazy val streamManager: StreamManager =
-    new StreamManager(bucket.name, key, s3Client.v1.sync)
+  lazy val streamManager: StreamTransferManager =
+    new StreamTransferManager(bucket.name, key, s3Client.v1.sync)
 
   lazy val outputStream: MultiPartOutputStream =
     streamManager.getMultiPartOutputStreams.get(0)
 
   def write[A: Serialiser](data: A): Unit =
     try {
+      scribe.info(s"PutStream to S3 bucket = $bucket, key = $key")
       outputStream.write(Serialiser[A].serialise(data))
     } catch {
       case t: Throwable =>
-        scribe.error(s"Aborting output stream write to S3", t)
-        streamManager.abort()
+        scribe.error(s"Aborting write of PutStream", t)
+        outputStream.close()
+        streamManager.abort(t)
     }
 
   def complete(): Unit =
     try {
-      scribe.info(s"Completing Put Stream")
+      scribe.info(s"Completing PutStream")
       outputStream.close()
       streamManager.complete()
     } catch {
       case t: Throwable =>
-        scribe.error(s"Aborting completion of output stream to S3", t)
+        scribe.error(s"Aborting completion of PutStream", t)
         streamManager.abort()
     }
+
+  def abort(): Unit =
+    Try {
+      scribe.error(s"Aborting PutStream")
+      outputStream.close()
+      streamManager.abort()
+    } getOrElse ()
+
+  def abort(t: Throwable): Unit =
+    Try {
+      scribe.error(s"Aborting PutStream")
+      outputStream.close()
+      streamManager.abort(t)
+    } getOrElse ()
 }

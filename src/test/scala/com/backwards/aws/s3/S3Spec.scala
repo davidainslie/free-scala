@@ -46,7 +46,7 @@ object S3StubInterpreter extends (S3 ~> Id) {
         buckets.update(request.bucket, buckets.getOrElse(request.bucket, Map.empty[String, RequestBody]) + (request.key -> body))
         PutObjectResponse.builder.build.asInstanceOf[A]
 
-      case PutStream(bucket, key) =>
+      case PutStream(bucket, key, data, serialiser) =>
         ??? // TODO
 
       case GetObject(request) =>
