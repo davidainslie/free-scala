@@ -1,6 +1,7 @@
 package com.backwards.http.interpreter
 
 import scala.concurrent.duration._
+import scala.util.chaining.scalaUtilChainingOps
 import cats.free.Free
 import cats.implicits._
 import cats.{Id, InjectK, ~>}
@@ -48,11 +49,10 @@ class SttpIdSpec extends AnyWordSpec with Matchers {
           data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
-      val (auth: Auth, data: String) =
-        program.foldMap(SttpInterpreter())
-
-      auth mustEqual SttpInterpreter.bearer
-      data mustEqual SttpInterpreter.data
+      program.foldMap(SttpInterpreter()).pipe { case (auth, data) =>
+        auth mustEqual SttpInterpreter.bearer
+        data mustEqual SttpInterpreter.data
+      }
     }
 
     "be applied against an async interpreter where exceptions are simply thrown" in {

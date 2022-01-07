@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 import scala.util.chaining.scalaUtilChainingOps
 import cats.data.EitherK
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
+import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.free.Free
 import cats.implicits._
 import cats.{InjectK, ~>}
@@ -20,7 +20,7 @@ import sttp.client3.{HttpError, SttpBackend}
 import sttp.model.Method._
 import sttp.model.StatusCode
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.wordspec.AsyncWordSpec
 import org.scalatest.{EitherValues, Inspectors}
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
@@ -37,12 +37,12 @@ import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
 import com.backwards.{aws, http}
 
-class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValues with Inspectors with ForAllTestContainer with AwsContainer {
+class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with EitherValues with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against async interpreters" in withS3(container) { s3Client =>
+    "be applied against async interpreters" in withSyncS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -98,22 +98,17 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(GetObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      val Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =
-        response.attempt.unsafeRunSync()
-
-      new String(responseAttempt.readAllBytes).pipe(data =>
-        forAll(List(SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2))(dataEntry =>
-          data must include (dataEntry.noSpaces)
-        )
-      )
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map {
+        case Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =>
+          new String(responseAttempt.readAllBytes).pipe(data =>
+            forAll(List(SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2))(dataEntry =>
+              data must include (dataEntry.noSpaces)
+            )
+          )
+      }
     }
 
-    "be applied against async interpreters where Http exceptions are captured via MonadError" in withS3(container) { s3Client =>
+    "be applied against async interpreters where Http exceptions are captured via MonadError" in withSyncS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -139,18 +134,13 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(aws.s3.GetObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      val Left(error: HttpError[_]) =
-        response.attempt.unsafeRunSync()
-
-      error.statusCode mustEqual StatusCode.InternalServerError
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map {
+        case Left(error: HttpError[_]) =>
+          error.statusCode mustEqual StatusCode.InternalServerError
+      }
     }
 
-    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withS3(container) { s3Client =>
+    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withSyncS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -190,13 +180,9 @@ class CoproductIOInterpreterIT extends AnyWordSpec with Matchers with EitherValu
           response  <- GetObject(aws.s3.GetObjectRequest(bucket, "WHOOPS"))
         } yield response
 
-      val response: IO[ResponseInputStream[GetObjectResponse]] =
-        S3IOInterpreter.resource(s3Client).use { s3Interpreter =>
-          program.foldMap(SttpInterpreter() or s3Interpreter)
-        }
-
-      // Our program fails when accessing the wrong key
-      response.attempt.unsafeRunSync().left.value mustBe a [NoSuchKeyException]
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map {
+        case Left(_: NoSuchKeyException) => succeed
+      }
     }
   }
 }
