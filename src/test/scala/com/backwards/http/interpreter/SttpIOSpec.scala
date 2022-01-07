@@ -20,6 +20,7 @@ import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http._
+import com.backwards.util.EitherOps.syntax.EitherExtension
 
 class SttpIOSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
   "Http Algebra" should {
@@ -55,7 +56,7 @@ class SttpIOSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
           data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
-      program.foldMap(SttpInterpreter()).attempt.map { case Right((auth, data)) =>
+      program.foldMap(SttpInterpreter()).attempt.map(_.rightValue).map { case (auth, data) =>
         auth mustEqual SttpInterpreter.bearer
         data mustEqual SttpInterpreter.data
       }
@@ -78,8 +79,8 @@ class SttpIOSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
           data <- Get[String](uri("https://backwards.com/api/execute"))
         } yield (auth, data)
 
-      program.foldMap(SttpInterpreter()).attempt.map { case Left(error: HttpError[_]) =>
-        error.statusCode mustEqual StatusCode.InternalServerError
+      program.foldMap(SttpInterpreter()).attempt.map(_.leftValue).map { case HttpError(_, statusCode) =>
+        statusCode mustEqual StatusCode.InternalServerError
       }
     }
   }

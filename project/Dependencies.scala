@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   def apply(): Seq[ModuleID] =
     List(
-      scalaMeta, scalatest, munit, scalatestContainers,
+      scalaMeta, scalatest, specs2, munit, scalatestContainers,
       log4Cats, scribe, pprint,
       cats, catsEffect, catsEffectTesting, catsRetry, kittens, catnip, mouse,
       simulacrum, refined, monocle, shapeless,
@@ -16,6 +16,15 @@ object Dependencies {
   lazy val scalatest: Seq[ModuleID] =
     List("org.scalatest" %% "scalatest" % "3.2.10" % "test, it" withSources() withJavadoc())
 
+  lazy val specs2: Seq[ModuleID] = {
+    val group = "org.specs2"
+    val version = "4.13.1"
+
+    List(
+      "specs2-core", "specs2-scalacheck", "specs2-matcher-extra", "specs2-cats", "specs2-shapeless"
+    ).map(group %% _ % version % "test, it" withSources() withJavadoc())
+  }
+
   lazy val munit: Seq[ModuleID] =
     List("org.scalameta" %% "munit" % "0.7.29" % "test, it" withSources() withJavadoc())
 
@@ -27,7 +36,9 @@ object Dependencies {
       "testcontainers-scala-scalatest", "testcontainers-scala-munit",
       "testcontainers-scala-localstack", "testcontainers-scala-localstack-v2",
       "testcontainers-scala-mockserver"
-    ).map(group %% _ % version % "test, it" withSources() withJavadoc())
+    ).map(group %% _ % version % "test, it" withSources() withJavadoc()) ++ List(
+      "io.chrisdavenport" %% "testcontainers-specs2" % "0.2.0-M3" % "test, it"
+    )
   }
 
   lazy val log4Cats: Seq[ModuleID] = {
@@ -65,8 +76,14 @@ object Dependencies {
     ).map(group %% _ % version withSources() withJavadoc())
   }
 
-  lazy val catsEffectTesting: Seq[ModuleID] =
-    List("org.typelevel" %% "cats-effect-testing-scalatest" % "1.4.0" % "test, it")
+  lazy val catsEffectTesting: Seq[ModuleID] = {
+    val group = "org.typelevel"
+    val version = "1.4.0"
+
+    List(
+      "cats-effect-testing-scalatest"
+    ).map(group %% _ % version % "test, it" withSources() withJavadoc())
+  }
 
   lazy val catsRetry: Seq[ModuleID] =
     List("com.github.cb372" %% "cats-retry" % "3.1.0")

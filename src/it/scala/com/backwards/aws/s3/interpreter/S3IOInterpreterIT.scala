@@ -36,9 +36,9 @@ class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers wit
           response  <- GetObject(GetObjectRequest(bucket, "foo"))
         } yield response
 
-      S3IOInterpreter.resource(s3Client).use(program.foldMap(_)).attempt.map { case Right(responseAttempt: ResponseInputStream[GetObjectResponse]) =>
-        new String(responseAttempt.readAllBytes) mustEqual "Blah blah"
-      }
+      S3IOInterpreter.resource(s3Client).use(program.foldMap(_)).map(response =>
+        new String(response.readAllBytes) mustEqual "Blah blah"
+      )
     }
   }
 }
