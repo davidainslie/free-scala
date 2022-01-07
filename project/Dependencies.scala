@@ -66,7 +66,7 @@ object Dependencies {
   }
 
   lazy val catsEffectTesting: Seq[ModuleID] =
-    List("com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4" % "test, it")
+    List("org.typelevel" %% "cats-effect-testing-scalatest" % "1.4.0" % "test, it")
 
   lazy val catsRetry: Seq[ModuleID] =
     List("com.github.cb372" %% "cats-retry" % "3.1.0")

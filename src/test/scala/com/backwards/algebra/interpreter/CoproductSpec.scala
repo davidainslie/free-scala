@@ -46,8 +46,6 @@ class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
         }
       }
 
-      // TODO - There is: RequestBody.fromInputStream() but needs content length.
-      //  There are possible workarounds, where a solution would allow S3 to fit in better with Http pagination.
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
         for {
           bucket    <- Bucket("my-bucket").liftFree[Algebras]
