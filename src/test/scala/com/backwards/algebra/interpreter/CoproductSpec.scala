@@ -1,6 +1,5 @@
 package com.backwards.algebra.interpreter
 
-import scala.util.chaining.scalaUtilChainingOps
 import cats.data.EitherK
 import cats.free.Free
 import cats.implicits._
@@ -8,6 +7,7 @@ import cats.{Id, InjectK}
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
+import io.circe.parser.parse
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
@@ -24,6 +24,7 @@ import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.{Auth, Http, StubHttpInterpreter}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.util.EitherOps.syntax.EitherExtension
 
 class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
   "Coproduct Algebras (in this case of Http and S3)" should {
@@ -59,11 +60,7 @@ class CoproductSpec extends AnyWordSpec with Matchers with Inspectors {
       val response: Id[ResponseInputStream[GetObjectResponse]] =
         program.foldMap(StubHttpInterpreter or S3StubInterpreter)
 
-      new String(response.readAllBytes).pipe(data =>
-        forAll(List(StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2))(dataEntry =>
-          data must include (dataEntry.noSpaces)
-        )
-      )
+      new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2)
     }
   }
 }

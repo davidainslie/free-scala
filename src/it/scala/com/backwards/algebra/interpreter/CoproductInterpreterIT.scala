@@ -1,7 +1,6 @@
 package com.backwards.algebra.interpreter
 
 import scala.concurrent.duration._
-import scala.util.chaining.scalaUtilChainingOps
 import cats.data.EitherK
 import cats.free.Free
 import cats.implicits._
@@ -10,6 +9,7 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
+import io.circe.parser._
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
@@ -36,6 +36,7 @@ import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.util.EitherOps.syntax.EitherExtension
 
 class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
@@ -99,11 +100,7 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
       val response: Id[ResponseInputStream[GetObjectResponse]] =
         program.foldMap(SttpInterpreter() or S3Interpreter(s3Client))
 
-      new String(response.readAllBytes).pipe(data =>
-        forAll(List(SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2))(dataEntry =>
-          data must include (dataEntry.noSpaces)
-        )
-      )
+      new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
     }
   }
 }
