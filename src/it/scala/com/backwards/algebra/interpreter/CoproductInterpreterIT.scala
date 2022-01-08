@@ -89,12 +89,12 @@ class CoproductInterpreterIT extends AnyWordSpec with Matchers with Inspectors w
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
         for {
-          bucket    <- Bucket("my-bucket").liftFree[Algebras]
-          _         <- CreateBucket(CreateBucketRequest(bucket))
+          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
-          _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(GetObjectRequest(bucket, "foo"))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+          response  <- GetObject(getObjectRequest(bucket, "foo"))
         } yield response
 
       val response: Id[ResponseInputStream[GetObjectResponse]] =

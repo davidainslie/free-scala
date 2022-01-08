@@ -30,10 +30,10 @@ class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers wit
     "be applied against an async interpreter" in withMonadS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
         for {
-          bucket    <- Bucket("my-bucket").liftFree[S3]
-          _         <- CreateBucket(CreateBucketRequest(bucket))
-          _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
-          response  <- GetObject(GetObjectRequest(bucket, "foo"))
+          bucket    <- bucket("my-bucket").liftFree[S3]
+          _         <- CreateBucket(createBucketRequest(bucket))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
+          response  <- GetObject(getObjectRequest(bucket, "foo"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(program.foldMap(_)).map(response =>

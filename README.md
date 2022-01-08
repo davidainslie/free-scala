@@ -19,11 +19,11 @@ Take a look at the example code [CoproductIOInterpreterApp](src/it/scala/com/bac
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
   for {
-    bucket    <- Bucket("my-bucket").liftFree[Algebras]
-    _         <- CreateBucket(CreateBucketRequest(bucket))
+    bucket    <- bucket("my-bucket").liftFree[Algebras]
+    _         <- CreateBucket(createBucketRequest(bucket))
     data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
-    _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-    response  <- GetObject(GetObjectRequest(bucket, "foo"))
+    _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+    response  <- GetObject(getObjectRequest(bucket, "foo"))
   } yield response
   
 // Where "paginate" is an extension method:
@@ -50,10 +50,10 @@ Take a look at the example code [CoproductIOStreamInterpreterApp](src/it/scala/c
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
   for {
-    bucket    <- com.backwards.aws.s3.Bucket("my-bucket").liftFree[Algebras]
-    _         <- CreateBucket(CreateBucketRequest(bucket))
+    bucket    <- bucket("my-bucket").liftFree[Algebras]
+    _         <- CreateBucket(createBucketRequest(bucket))
     _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
-    response  <- GetObject(GetObjectRequest(bucket, "foo"))
+    response  <- GetObject(getObjectRequest(bucket, "foo"))
   } yield response
   
 // Where "paginate" is an extension method:
