@@ -11,7 +11,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.aws.s3.{Bucket, CreateBucketRequest, GetObjectRequest, PutObjectRequest, S3}
 import com.backwards.aws.s3.S3._
-import com.backwards.docker.aws.AwsContainer
+import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 
 /**
