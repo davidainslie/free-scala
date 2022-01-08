@@ -34,10 +34,10 @@ package object scalatest {
       try test(s3Client) finally s3Client.close()
     }
 
-    def withSyncS3[F[_]: MonadError[*[_], Throwable]](container: LocalStackContainer)(test: S3Client => F[Assertion]): F[Assertion] =
+    def withMonadS3[F[_]: MonadError[*[_], Throwable]](container: LocalStackContainer)(test: S3Client => F[Assertion]): F[Assertion] =
       for {
         s3Client <- MonadError[F, Throwable].pure(self.s3Client(container))
-        result <- test(s3Client).attempt
+        result   <- test(s3Client).attempt
         _ = Try(s3Client.close())
       } yield
         result.fold(throw _, identity)

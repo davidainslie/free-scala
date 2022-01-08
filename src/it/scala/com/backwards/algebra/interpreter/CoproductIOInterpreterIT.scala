@@ -42,7 +42,7 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against async interpreters" in withSyncS3(container) { s3Client =>
+    "be applied against async interpreters" in withMonadS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -103,7 +103,7 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
       )
     }
 
-    "be applied against async interpreters where Http exceptions are captured via MonadError" in withSyncS3(container) { s3Client =>
+    "be applied against async interpreters where Http exceptions are captured via MonadError" in withMonadS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -134,7 +134,7 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
       }
     }
 
-    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withSyncS3(container) { s3Client =>
+    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withMonadS3(container) { s3Client =>
       import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
