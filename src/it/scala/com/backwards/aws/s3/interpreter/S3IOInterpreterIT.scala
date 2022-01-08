@@ -12,7 +12,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.{ForAllTestContainer, LocalStackContainer}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
-import com.backwards.docker.aws.AwsContainer
+import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 
 /**
@@ -27,7 +27,7 @@ class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers wit
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against an async interpreter" in withSyncS3(container) { s3Client =>
+    "be applied against an async interpreter" in withMonadS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
         for {
           bucket    <- Bucket("my-bucket").liftFree[S3]

@@ -26,7 +26,7 @@ import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3Interpreter
-import com.backwards.docker.aws.AwsContainer
+import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.fp.implicits.monadErrorId
 import com.backwards.http
