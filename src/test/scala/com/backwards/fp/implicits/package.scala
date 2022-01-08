@@ -5,8 +5,8 @@ import cats.{Id, MonadError}
 
 package object implicits {
   /**
-   * Only intended for tests i.e. production code should not rely on a MonadError for Id.
-   * Production code should use a Monad with some actual error handling effect.
+   * Only intended for tests i.e. production code must not use a MonadError for Id as it is not lawful.
+   * Production code must use a Monad with some actual error handling effect.
    */
   implicit val monadErrorId: MonadError[Id, Throwable] =
     new MonadError[Id, Throwable] {
