@@ -89,11 +89,11 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
 
   def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
     for {
-      bucket    <- Bucket("my-bucket").liftFree[Algebras]
-      _         <- CreateBucket(CreateBucketRequest(bucket))
+      bucket    <- bucket("my-bucket").liftFree[Algebras]
+      _         <- CreateBucket(createBucketRequest(bucket))
       data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
-      _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-      response  <- GetObject(GetObjectRequest(bucket, "foo"))
+      _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+      response  <- GetObject(getObjectRequest(bucket, "foo"))
     } yield response
 
   // TODO Could try RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html

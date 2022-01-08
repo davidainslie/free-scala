@@ -29,13 +29,13 @@ import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
+import com.backwards.http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
 import com.backwards.util.EitherOps.syntax._
-import com.backwards.{aws, http}
 
 class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
@@ -90,12 +90,12 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
         for {
-          bucket    <- Bucket("my-bucket").liftFree[Algebras]
-          _         <- CreateBucket(CreateBucketRequest(bucket))
+          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
-          _         <- PutObject(PutObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(GetObjectRequest(bucket, "foo"))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+          response  <- GetObject(getObjectRequest(bucket, "foo"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).map(response =>
@@ -121,12 +121,12 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
         for {
-          bucket    <- Bucket("my-bucket").liftFree[Algebras]
-          _         <- CreateBucket(aws.s3.CreateBucketRequest(bucket))
+          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           _         <- Get[Json](uri("https://backwards.com/api/execute"))
-          _         <- PutObject(aws.s3.PutObjectRequest(bucket, "foo"), RequestBody.fromString("Won't reach here"))
-          response  <- GetObject(aws.s3.GetObjectRequest(bucket, "foo"))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Won't reach here"))
+          response  <- GetObject(getObjectRequest(bucket, "foo"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map(_.leftValue).map {
@@ -166,12 +166,12 @@ class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Match
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
         for {
-          bucket    <- Bucket("my-bucket").liftFree[Algebras]
-          _         <- CreateBucket(aws.s3.CreateBucketRequest(bucket))
+          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute"))
-          _         <- PutObject(aws.s3.PutObjectRequest(bucket, "foo"), RequestBody.fromString((data \ "data").flatMap(_.asArray).combineAll.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(aws.s3.GetObjectRequest(bucket, "WHOOPS"))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString((data \ "data").flatMap(_.asArray).combineAll.map(_.noSpaces).mkString("\n")))
+          response  <- GetObject(getObjectRequest(bucket, "WHOOPS"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map(_.leftValue)
