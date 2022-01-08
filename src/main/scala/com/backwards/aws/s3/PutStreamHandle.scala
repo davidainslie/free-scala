@@ -1,6 +1,5 @@
 package com.backwards.aws.s3
 
-import scala.util.Try
 import alex.mojaki.s3upload.{MultiPartOutputStream, StreamTransferManager}
 import software.amazon.awssdk.services.s3.model.Bucket
 
@@ -34,16 +33,22 @@ final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String
     }
 
   def abort(): Unit =
-    Try {
+    try {
       scribe.error(s"Aborting PutStream")
       outputStream.close()
       streamManager.abort()
-    } getOrElse ()
+    } catch {
+      case t: Throwable =>
+        throw t
+    }
 
   def abort(t: Throwable): Unit =
-    Try {
+    try {
       scribe.error(s"Aborting PutStream")
       outputStream.close()
       streamManager.abort(t)
-    } getOrElse ()
+    } catch {
+      case t: Throwable =>
+        throw t
+    }
 }

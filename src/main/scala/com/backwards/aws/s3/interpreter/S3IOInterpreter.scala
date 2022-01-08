@@ -43,13 +43,10 @@ class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[
         putStreamHandles.update(hs =>
           hs.updatedWith(PutStreamHandleKey(bucket, key)) {
             case Some(h) =>
-              h.write(data)(serialiser)
-              h.some
+              h.tap(_.write(data)(serialiser)).pipe(_.some)
 
             case None =>
-              val h = PutStreamHandle(s3Client, bucket, key)
-              h.write(data)(serialiser)
-              h.some
+              PutStreamHandle(s3Client, bucket, key).tap(_.write(data)(serialiser)).pipe(_.some)
           }
         ).map(_.asInstanceOf[A])
 
@@ -58,8 +55,7 @@ class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[
           val putStreamHandleKey: PutStreamHandleKey =
             PutStreamHandleKey(bucket, key)
 
-          hs.get(putStreamHandleKey).foreach(h => h.complete())
-          hs - putStreamHandleKey
+          hs.get(putStreamHandleKey).foreach(h => h.complete()).pipe(_ => hs - putStreamHandleKey)
         }.map(_.asInstanceOf[A])
 
       case GetObject(request) =>
