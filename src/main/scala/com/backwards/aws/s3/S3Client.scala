@@ -3,6 +3,8 @@ package com.backwards.aws.s3
 import java.net.URI
 import scala.util.Try
 import scala.util.chaining._
+import cats.Monad
+import cats.effect.{Resource, Sync}
 import cats.implicits._
 import eu.timepit.refined.auto._
 import software.amazon.awssdk.regions.Region
@@ -59,4 +61,9 @@ final case class S3Client(credentials: Credentials, region: Region, endpoint: Op
         .region(region)
         .build
   }
+}
+
+object S3Client {
+  def resource[F[_]: Sync](credentials: Credentials, region: Region, endpoint: Option[URI] = None): Resource[F, S3Client] =
+    Resource.make(Sync[F].delay(new S3Client(credentials, region, endpoint)))(client => Sync[F].delay(client.close()))
 }

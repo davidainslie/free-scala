@@ -2,13 +2,14 @@ package com.backwards.aws.s3.interpreter
 
 import java.util.concurrent.CompletableFuture
 import scala.util.chaining.scalaUtilChainingOps
+import cats.data.EitherT
 import cats.effect.{IO, Ref, Resource}
 import cats.implicits._
 import cats.~>
 import software.amazon.awssdk.core.async.{AsyncRequestBody, AsyncResponseTransformer}
 import software.amazon.awssdk.core.{ResponseBytes, ResponseInputStream}
 import software.amazon.awssdk.http.AbortableInputStream
-import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse, PutObjectResponse}
+import software.amazon.awssdk.services.s3.model.{Bucket, BucketAlreadyOwnedByYouException, CreateBucketResponse, GetObjectResponse, PutObjectResponse}
 import com.amazonaws.util.IOUtils
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter.PutStreamHandleKey
@@ -27,8 +28,14 @@ class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[
 
   override def apply[A](fa: S3[A]): IO[A] =
     fa match {
-      case CreateBucket(request) =>
-        IO.fromCompletableFuture(IO(s3Client.v2.async.createBucket(request))).map(_.asInstanceOf[A])
+      case CreateBucket(request, allowAlreadyExists) =>
+        EitherT(IO.fromCompletableFuture(IO(s3Client.v2.async.createBucket(request))).attempt).foldF(
+          {
+            case _: BucketAlreadyOwnedByYouException if allowAlreadyExists => IO(CreateBucketResponse.builder.build.asInstanceOf[A])
+            case t => IO.raiseError(t)
+          },
+          response => IO(response.asInstanceOf[A])
+        )
 
       case PutObject(request, body) =>
         val bytes: Array[Byte] =

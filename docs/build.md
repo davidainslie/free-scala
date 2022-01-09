@@ -8,13 +8,23 @@ If necessary, you may need other **environments** such as **.env-local** and **.
 ## SBT
 
 Unit test:
-
 ```shell
-$ sbt test
+sbt test
 ```
 
 Integration test:
-
 ```shell
-$ sbt it:test
+sbt it:test
+```
+
+Run IT apps which connect to a test Http API and LocalStack:
+```shell
+sbt "it:runMain com.backwards.algebra.interpreter.CoproductIOInterpreterITApp"
+
+sbt "it:runMain com.backwards.algebra.interpreter.CoproductIOStreamInterpreterITApp"
+```
+
+Run real world demo application connecting to test Http API and AWS:
+```shell
+sbt "runMain com.backwards.algebra.interpreter.CoproductIOStreamInterpreterApp"
 ```

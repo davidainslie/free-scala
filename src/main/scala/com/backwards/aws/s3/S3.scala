@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.s3.model._
 sealed trait S3[A] extends Product with Serializable
 
 object S3 {
-  final case class CreateBucket(request: CreateBucketRequest) extends S3[CreateBucketResponse]
+  final case class CreateBucket(request: CreateBucketRequest, allowAlreadyExists: Boolean = true) extends S3[CreateBucketResponse]
 
   final case class PutObject(request: PutObjectRequest, body: RequestBody) extends S3[PutObjectResponse]
 
