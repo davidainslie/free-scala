@@ -13,7 +13,7 @@ object S3Interpreter {
     new (S3 ~> Id) {
       override def apply[A](fa: S3[A]): Id[A] =
         fa match {
-          case CreateBucket(request) =>
+          case CreateBucket(request, allowAlreadyExists) =>
             s3Client.v2.sync.createBucket(request).asInstanceOf[A]
 
           case PutObject(request, body) =>

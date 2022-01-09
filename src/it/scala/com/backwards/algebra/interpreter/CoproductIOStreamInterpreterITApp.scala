@@ -10,23 +10,24 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import software.amazon.awssdk.core.ResponseInputStream
-import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
+import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import com.backwards.aws.s3
 import com.backwards.aws.s3.S3._
+import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
-import com.backwards.aws.s3.{Deserialiser, _}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
+import com.backwards.http
+import com.backwards.http.Http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
-import com.backwards.http.SttpBackendOps.syntax._
-import com.backwards.http._
+import com.backwards.http.SttpBackendOps.syntax.SttpBackendExtension
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
 
 /**
- * Interact with a real (though dummy) Http API and a LocalStack.
+ * Interact with a real (though dummy) Http API and a LocalStack via Stream.
  *
  * Http API: https://gorest.co.in
  *
@@ -68,22 +69,25 @@ import com.backwards.json.JsonOps.syntax._
  *   }
  * }}}
  */
-object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
+object CoproductIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
-  implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
-    def paginate: Free[F, Vector[Json]] = {
-      def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
-        (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
+  implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+    val maxPages: Int = 5
 
-      def go(get: Get[Json], acc: Vector[Json], page: Int): Free[F, Vector[Json]] =
+    def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
+      def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
         for {
-          content <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          pages   = (content \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
-          data    <- if (page < pages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
-        } yield data
+          json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
+          data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
+          _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+          //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
+          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
+          _     <- if (page < pages) go(get, page + 1) else unit[Algebras]
+        } yield ()
+      }
 
-      go(get, acc = Vector.empty, page = 1)
+      go(get, page = 1).as(CompletePutStream(bucket, key))
     }
   }
 
@@ -91,8 +95,7 @@ object CoproductIOInterpreterApp extends IOApp.Simple with WithAwsContainer {
     for {
       bucket    <- bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
-      data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
-      _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+      _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
       response  <- GetObject(getObjectRequest(bucket, "foo"))
     } yield response
 

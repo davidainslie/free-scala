@@ -38,7 +38,7 @@ object S3StubInterpreter extends (S3 ~> Id) {
 
   override def apply[A](fa: S3[A]): Id[A] =
     fa match {
-      case CreateBucket(request) =>
+      case CreateBucket(request, allowAlreadyExists) =>
         buckets += (request.bucket -> Map.empty[String, RequestBody])
         CreateBucketResponse.builder.build.asInstanceOf[A]
 
