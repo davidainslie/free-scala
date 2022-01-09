@@ -1,6 +1,5 @@
 package com.backwards.algebra.interpreter
 
-import cats.Monad
 import cats.effect.Sync
 import eu.timepit.refined.types.string.NonEmptyString
 import software.amazon.awssdk.auth.credentials.{AwsCredentials, ProfileCredentialsProvider}
