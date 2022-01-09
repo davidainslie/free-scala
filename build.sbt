@@ -14,7 +14,7 @@ ThisBuild / versionScheme := Some("early-semver")
 
 def project(id: String, base: File): Project =
   Project(id, base)
-    .enablePlugins(JavaAppPackaging)
+    .enablePlugins(JavaAppPackaging, DockerPlugin)
     .configs(IntegrationTest extend Test)
     .settings(inConfig(IntegrationTest extend Test)(Defaults.testSettings))
     .settings(Defaults.itSettings)
@@ -54,5 +54,15 @@ def project(id: String, base: File): Project =
       fork := true,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
-      addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings
+      Compile / mainClass := Some("com.backwards.algebra.interpreter.CoproductIOStreamInterpreterApp"),
+      addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+      dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
+      Docker / maintainer := "Backwards",
+      Docker / packageName := packageName.value,
+      Docker / version := "latest" /*version.value*/, // TODO - Sort out hack for Terraform
+      Docker / aggregate := false,
+      dockerExposedPorts ++= Seq(9000, 9001)
+      //Docker / dockerEnvVars := envVars.value
+      // Docker / dockerRepository
+      // Docker / dockerUsername
     )
