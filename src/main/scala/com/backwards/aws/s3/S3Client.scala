@@ -7,7 +7,6 @@ import cats.effect.{Resource, Sync}
 import cats.implicits._
 import eu.timepit.refined.auto._
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.s3.{S3AsyncClientBuilder, S3BaseClientBuilder, S3ClientBuilder}
 import com.backwards.auth.Credentials
 import com.backwards.fp.FunctionOps.syntax._
 
@@ -36,20 +35,21 @@ final case class S3Client(credentials: Credentials, region: Region, endpoint: Op
 
   object v2 {
     import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+    import software.amazon.awssdk.services.s3.{S3AsyncClient, S3AsyncClientBuilder, S3BaseClientBuilder, S3ClientBuilder, S3Client => S3SyncClient}
 
-    lazy val sync: software.amazon.awssdk.services.s3.S3Client =
-      software.amazon.awssdk.services.s3.S3Client
+    lazy val sync: S3SyncClient =
+      S3SyncClient
         .builder
         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.user.value, credentials.password.value)))
-        .optional(endpoint)(withEndpoint[software.amazon.awssdk.services.s3.S3Client, S3ClientBuilder])
+        .optional(endpoint)(withEndpoint[S3SyncClient, S3ClientBuilder])
         .region(region)
         .build
 
-    lazy val async: software.amazon.awssdk.services.s3.S3AsyncClient =
-      software.amazon.awssdk.services.s3.S3AsyncClient
+    lazy val async: S3AsyncClient =
+      S3AsyncClient
         .builder
         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.user.value, credentials.password.value)))
-        .optional(endpoint)(withEndpoint[software.amazon.awssdk.services.s3.S3AsyncClient, S3AsyncClientBuilder])
+        .optional(endpoint)(withEndpoint[S3AsyncClient, S3AsyncClientBuilder])
         .region(region)
         .build
 
