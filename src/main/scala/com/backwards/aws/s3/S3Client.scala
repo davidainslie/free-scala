@@ -3,11 +3,11 @@ package com.backwards.aws.s3
 import java.net.URI
 import scala.util.Try
 import scala.util.chaining._
-import cats.Monad
 import cats.effect.{Resource, Sync}
 import cats.implicits._
 import eu.timepit.refined.auto._
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.{S3AsyncClientBuilder, S3BaseClientBuilder, S3ClientBuilder}
 import com.backwards.auth.Credentials
 import com.backwards.fp.FunctionOps.syntax._
 
@@ -41,11 +41,7 @@ final case class S3Client(credentials: Credentials, region: Region, endpoint: Op
       software.amazon.awssdk.services.s3.S3Client
         .builder
         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.user.value, credentials.password.value)))
-        .optional(endpoint)(builder => uri =>
-          builder
-            .endpointOverride(uri)
-            .tap(_ => scribe.info(s"aws --endpoint-url=$uri s3 ls --recursive"))
-        )
+        .optional(endpoint)(withEndpoint[software.amazon.awssdk.services.s3.S3Client, S3ClientBuilder])
         .region(region)
         .build
 
@@ -53,13 +49,12 @@ final case class S3Client(credentials: Credentials, region: Region, endpoint: Op
       software.amazon.awssdk.services.s3.S3AsyncClient
         .builder
         .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.user.value, credentials.password.value)))
-        .optional(endpoint)(builder => uri =>
-          builder
-            .endpointOverride(uri)
-            .tap(_ => scribe.info(s"aws --endpoint-url=$uri s3 ls --recursive"))
-        )
+        .optional(endpoint)(withEndpoint[software.amazon.awssdk.services.s3.S3AsyncClient, S3AsyncClientBuilder])
         .region(region)
         .build
+
+    def withEndpoint[C, B <: S3BaseClientBuilder[B, C]]: B => URI => B =
+      builder => uri => builder.endpointOverride(uri).tap(_ => scribe.info(s"aws --endpoint-url=$uri s3 ls --recursive"))
   }
 }
 
