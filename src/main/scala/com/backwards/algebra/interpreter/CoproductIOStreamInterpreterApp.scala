@@ -1,25 +1,17 @@
 package com.backwards.algebra.interpreter
 
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.util.Try
 import scala.util.chaining.scalaUtilChainingOps
-import cats.{InjectK, ~>}
-import cats.data.{EitherK, EitherT}
-import cats.derived.MkFoldable.mkFoldableCCons
+import cats.InjectK
+import cats.data.EitherK
 import cats.effect.{IO, IOApp, Resource}
 import cats.free.Free
 import cats.implicits._
 import eu.timepit.refined.auto._
-import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import software.amazon.awssdk.auth.credentials.{AwsCredentials, ProfileCredentialsProvider}
 import software.amazon.awssdk.core.ResponseInputStream
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
-import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._

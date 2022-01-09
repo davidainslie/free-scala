@@ -83,7 +83,7 @@ object CoproductIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContai
           _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
           //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
           pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
-          _     <- if (page < pages) go(get, page + 1) else unit[Algebras]
+          _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
         } yield ()
       }
 
