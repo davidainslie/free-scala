@@ -1,5 +1,5 @@
 import java.util.Properties
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.chaining.scalaUtilChainingOps
 import sbt._
 
