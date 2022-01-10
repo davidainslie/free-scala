@@ -37,7 +37,7 @@ import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
 import com.backwards.util.EitherOps.syntax._
 
-class CoproductIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
+class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 

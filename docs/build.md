@@ -17,14 +17,20 @@ Integration test:
 sbt it:test
 ```
 
-Run IT apps which connect to a test Http API and LocalStack:
+Run IT apps (of multiple Algebra) which connect to a test Http API and LocalStack:
 ```shell
-sbt "it:runMain com.backwards.algebra.interpreter.CoproductIOInterpreterITApp"
+sbt "it:runMain com.backwards.algebra.interpreter.AlgebrasIOInterpreterITApp"
 
-sbt "it:runMain com.backwards.algebra.interpreter.CoproductIOStreamInterpreterITApp"
+sbt "it:runMain com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterITApp"
 ```
 
-Run real world demo application connecting to test Http API and AWS:
+Run real world demo application (of multiple Algebra) connecting to test Http API and AWS:
 ```shell
-sbt "runMain com.backwards.algebra.interpreter.CoproductIOStreamInterpreterApp"
+sbt "runMain com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"
+```
+
+## Docker
+
+```shell
+sbt docker:publishLocal
 ```

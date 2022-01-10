@@ -4,11 +4,11 @@ package object scalatest {
   import scala.util.Try
   import cats.MonadError
   import cats.implicits._
+  import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
   import software.amazon.awssdk.regions.Region
   import org.scalatest.Assertion
   import org.testcontainers.containers.localstack.LocalStackContainer.Service
   import com.dimafeng.testcontainers.LocalStackContainer
-  import com.backwards.auth.{Credentials, Password, User}
   import com.backwards.aws.s3.S3Client
 
   /**
@@ -21,7 +21,7 @@ package object scalatest {
   trait AwsContainer { self =>
     private def s3Client(container: LocalStackContainer): S3Client =
       S3Client(
-        Credentials(User(container.container.getAccessKey), Password(container.container.getSecretKey)),
+        AwsBasicCredentials.create(container.container.getAccessKey, container.container.getSecretKey),
         Region.of(container.container.getRegion),
         container.container.getEndpointOverride(Service.S3).some
       )
