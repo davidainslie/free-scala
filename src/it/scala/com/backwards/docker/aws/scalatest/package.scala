@@ -4,7 +4,6 @@ package object scalatest {
   import scala.util.Try
   import cats.MonadError
   import cats.implicits._
-  import eu.timepit.refined.types.string.NonEmptyString
   import software.amazon.awssdk.regions.Region
   import org.scalatest.Assertion
   import org.testcontainers.containers.localstack.LocalStackContainer.Service
@@ -22,7 +21,7 @@ package object scalatest {
   trait AwsContainer { self =>
     private def s3Client(container: LocalStackContainer): S3Client =
       S3Client(
-        Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
+        Credentials(User(container.container.getAccessKey), Password(container.container.getSecretKey)),
         Region.of(container.container.getRegion),
         container.container.getEndpointOverride(Service.S3).some
       )

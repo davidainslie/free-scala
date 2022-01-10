@@ -1,13 +1,10 @@
 package com.backwards.auth
 
 import cats.Show
-import cats.derived.semiauto
-import eu.timepit.refined.types.string.NonEmptyString
-import com.backwards.fp.ShowRefined
 
-final case class Password(value: NonEmptyString)
+final case class Password(value: String) extends AnyVal
 
-object Password extends ShowRefined {
+object Password {
   implicit val showPassword: Show[Password] =
-    semiauto.show
+    Show.show(_ => "Password(value = <password>)")
 }
