@@ -1,7 +1,6 @@
 package com.backwards.algebra.interpreter
 
 import cats.effect.Sync
-import eu.timepit.refined.types.string.NonEmptyString
 import software.amazon.awssdk.auth.credentials.{AwsCredentials, ProfileCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.model.Bucket
@@ -16,10 +15,8 @@ object Environment {
       val awsCredentials: AwsCredentials =
         ProfileCredentialsProvider.create(sys.env("AWS_PROFILE")).resolveCredentials
 
-      val credentials = Credentials(
-        User(NonEmptyString.unsafeFrom(awsCredentials.accessKeyId)),
-        Password(NonEmptyString.unsafeFrom(awsCredentials.secretAccessKey))
-      )
+      val credentials: Credentials =
+        Credentials(User(awsCredentials.accessKeyId), Password(awsCredentials.secretAccessKey))
 
       val region: Region =
         Region.of(sys.env("AWS_REGION"))

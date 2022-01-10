@@ -2,7 +2,6 @@ package com.backwards.docker.aws
 
 import scala.util.Try
 import cats.implicits._
-import eu.timepit.refined.types.string.NonEmptyString
 import software.amazon.awssdk.regions.Region
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.LocalStackContainer
@@ -26,14 +25,9 @@ trait WithAwsContainer {
     (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
   )
 
-  /*
-  TODO - Maybe return Either e.g.
-  val u: String Either NonEmptyString =
-    NonEmptyString.from(container.container.getAccessKey)
-  */
   lazy val s3Client: S3Client =
     S3Client(
-      Credentials(User(NonEmptyString.unsafeFrom(container.container.getAccessKey)), Password(NonEmptyString.unsafeFrom(container.container.getSecretKey))),
+      Credentials(User(container.container.getAccessKey), Password(container.container.getSecretKey)),
       Region.of(container.container.getRegion),
       container.container.getEndpointOverride(Service.S3).some
     )

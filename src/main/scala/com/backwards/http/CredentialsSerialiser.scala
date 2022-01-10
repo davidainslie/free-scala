@@ -20,8 +20,8 @@ object CredentialsSerialiser {
       serialise(
         List(
           "grant_type" -> "password",
-          "username" -> credentials.user.value.value,
-          "password" -> credentials.password.value.value
+          "username" -> credentials.user.value,
+          "password" -> credentials.password.value
         )
       )
   }
@@ -31,8 +31,8 @@ object CredentialsSerialiser {
       serialise(
         List(
           "grant_type" -> "client_credentials",
-          "client_id" -> credentials.user.value.value,
-          "client_secret" -> credentials.password.value.value
+          "client_id" -> credentials.user.value,
+          "client_secret" -> credentials.password.value
         )
       )
   }

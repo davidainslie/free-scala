@@ -5,7 +5,6 @@ import scala.util.Try
 import scala.util.chaining._
 import cats.effect.{Resource, Sync}
 import cats.implicits._
-import eu.timepit.refined.auto._
 import software.amazon.awssdk.regions.Region
 import com.backwards.auth.Credentials
 import com.backwards.fp.FunctionOps.syntax._
