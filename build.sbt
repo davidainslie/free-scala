@@ -54,7 +54,7 @@ def project(id: String, base: File): Project =
       fork := true,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
-      Compile / mainClass := Some("com.backwards.algebra.interpreter.CoproductIOStreamInterpreterApp"),
+      Compile / mainClass := Some("com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
