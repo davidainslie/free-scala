@@ -3,13 +3,15 @@ package com.backwards.algebra.interpreter
 import scala.util.chaining.scalaUtilChainingOps
 import cats.InjectK
 import cats.data.EitherK
-import cats.effect.{IO, IOApp, Resource}
+import cats.effect.{IO, IOApp}
 import cats.free.Free
 import cats.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.core.ResponseInputStream
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3
@@ -68,7 +70,7 @@ import com.backwards.json.JsonOps.syntax._
  *   }
  * }}}
  */
-object CoproductIOStreamInterpreterApp extends IOApp.Simple {
+object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
@@ -89,9 +91,8 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple {
     }
   }
 
-  def program(env: Environment)(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+  def program(bucket: Bucket)(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
     for {
-      bucket    <- env.bucket.liftFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
       path      = "foo.txt"
       _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, path)
@@ -100,12 +101,11 @@ object CoproductIOStreamInterpreterApp extends IOApp.Simple {
 
   def run: IO[Unit] = (
     for {
-      env           <- Resource.eval(Environment[IO])
-      s3Client      <- S3Client.resource[IO](env.credentials, env.region)
+      s3Client      <- S3Client.resource[IO](DefaultCredentialsProvider.create.resolveCredentials, Region.of(sys.env("AWS_REGION")))
       s3Interpreter <- S3IOInterpreter.resource(s3Client)
       backend       <- AsyncHttpClientCatsBackend.resource[IO]()
-    } yield (backend, s3Interpreter, env)
-  ).use { case (backend, s3Interpreter, env) => program(env).foldMap(SttpInterpreter(backend.logging) or s3Interpreter) }.attempt.flatMap {
+    } yield (backend, s3Interpreter)
+  ).use { case (backend, s3Interpreter) => program(bucket(sys.env("AWS_BUCKET"))).foldMap(SttpInterpreter(backend.logging) or s3Interpreter) }.attempt.flatMap {
     case Left(t)  => scribe.error(t).pipe(_ => IO.raiseError(t))
     case Right(r) => scribe.info(new String(r.readAllBytes)).pipe(_ => IO.unit)
   }

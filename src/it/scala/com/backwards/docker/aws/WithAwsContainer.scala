@@ -2,10 +2,10 @@ package com.backwards.docker.aws
 
 import scala.util.Try
 import cats.implicits._
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.LocalStackContainer
-import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3.S3Client
 
 /**
@@ -27,7 +27,7 @@ trait WithAwsContainer {
 
   lazy val s3Client: S3Client =
     S3Client(
-      Credentials(User(container.container.getAccessKey), Password(container.container.getSecretKey)),
+      DefaultCredentialsProvider.create.resolveCredentials,
       Region.of(container.container.getRegion),
       container.container.getEndpointOverride(Service.S3).some
     )

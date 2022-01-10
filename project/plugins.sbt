@@ -2,7 +2,7 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.1")
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
 
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.5")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.4.1")
 

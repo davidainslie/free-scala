@@ -97,3 +97,16 @@ hs_err_pid*
 .bsp
 .metals
 .vscode
+
+**/node_modules
+
+.terraform
+.terraform/
+**/.terraform/*
+*.tfvars
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+*.tfstate.*
+*.terraform.lock.hcl
+private_ips.txt
