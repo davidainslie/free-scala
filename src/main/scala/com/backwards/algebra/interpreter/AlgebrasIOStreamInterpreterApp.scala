@@ -3,13 +3,12 @@ package com.backwards.algebra.interpreter
 import scala.util.chaining.scalaUtilChainingOps
 import cats.InjectK
 import cats.data.EitherK
-import cats.effect.{IO, IOApp}
+import cats.effect.{IO, IOApp, Resource}
 import cats.free.Free
 import cats.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
@@ -82,6 +81,7 @@ object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
           json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
           data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
           _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+          //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
           pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
           _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
         } yield ()
@@ -101,9 +101,10 @@ object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
 
   def run: IO[Unit] = (
     for {
-      s3Client      <- S3Client.resource[IO](DefaultCredentialsProvider.create.resolveCredentials, Region.of(sys.env("AWS_REGION")))
-      s3Interpreter <- S3IOInterpreter.resource(s3Client)
-      backend       <- AsyncHttpClientCatsBackend.resource[IO]()
+      awsCredentials  <- Resource.eval(awsCredentials[IO])
+      s3Client        <- S3Client.resource[IO](awsCredentials, Region.of(sys.env("AWS_REGION")))
+      s3Interpreter   <- S3IOInterpreter.resource(s3Client)
+      backend         <- AsyncHttpClientCatsBackend.resource[IO]()
     } yield (backend, s3Interpreter)
   ).use { case (backend, s3Interpreter) => program(bucket(sys.env("AWS_BUCKET"))).foldMap(SttpInterpreter(backend.logging) or s3Interpreter) }.attempt.flatMap {
     case Left(t)  => scribe.error(t).pipe(_ => IO.raiseError(t))

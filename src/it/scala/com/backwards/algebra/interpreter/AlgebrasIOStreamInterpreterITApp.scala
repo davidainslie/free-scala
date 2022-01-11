@@ -101,7 +101,7 @@ object AlgebrasIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContain
 
   // TODO Could try RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
-    Resource.both(AsyncHttpClientCatsBackend.resource[IO](), S3IOInterpreter.resource(s3Client)).use { case (backend, s3Interpreter) =>
+    Resource.both(AsyncHttpClientCatsBackend.resource[IO](), Resource.eval(s3Client[IO]) >>= S3IOInterpreter.resource).use { case (backend, s3Interpreter) =>
       program.foldMap(SttpInterpreter(backend.logging) or s3Interpreter)
     } >>= (response => IO.fromEither(Try(new String(response.readAllBytes)).toEither)) >>= (result => IO(scribe.info(result)))
 }
