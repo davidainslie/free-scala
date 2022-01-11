@@ -5,6 +5,13 @@
 Any environment variables that should not be saved in **Git** should be in a **.env** file - a hidden file.
 If necessary, you may need other **environments** such as **.env-local** and **.env-dev** etc.
 
+AWS Credentials are aquired via the Java SDK `credentials provider chain` e.g. check system properties, then environment variables and so on, for:
+- AWS_PROFILE
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+TODO - Must expand on the above
+
 ## SBT
 
 Unit test:
