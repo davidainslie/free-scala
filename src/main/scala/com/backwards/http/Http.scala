@@ -7,6 +7,7 @@ import cats.free.Free._
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
+import com.backwards.serialisation.Deserialiser
 
 sealed trait Http[A] extends Product with Serializable
 

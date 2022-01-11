@@ -3,10 +3,8 @@ package com.backwards.http
 import cats.implicits.catsSyntaxOptionId
 import io.circe.Json
 
-trait Serialiser[A] {
-  val contentType: Option[String]
-
-  def serialise(data: A): Array[Byte]
+trait Serialiser[A] extends com.backwards.serialisation.Serialiser[A] {
+  val contentType: Option[String] // TODO - Not sure I like this being an Option but Nothing does map nicely to None
 }
 
 object Serialiser {

@@ -14,8 +14,8 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3.S3._
+import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
-import com.backwards.aws.s3.{Deserialiser, _}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
@@ -24,6 +24,7 @@ import com.backwards.http.SttpBackendOps.syntax._
 import com.backwards.http._
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.serialisation.Deserialiser
 
 /**
  * Interact with a real (though dummy) Http API and a LocalStack.

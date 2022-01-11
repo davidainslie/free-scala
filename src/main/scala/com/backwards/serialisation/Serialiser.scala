@@ -1,4 +1,4 @@
-package com.backwards.aws.s3
+package com.backwards.serialisation
 
 import io.circe.Json
 

@@ -7,6 +7,7 @@ import cats.implicits._
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model._
+import com.backwards.serialisation.Serialiser
 
 /**
  * Algebra to interact with AWS S3 via Free Monad

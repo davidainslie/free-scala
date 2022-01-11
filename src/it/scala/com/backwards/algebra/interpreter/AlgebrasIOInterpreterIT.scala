@@ -29,12 +29,12 @@ import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
-import com.backwards.http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.serialisation.Deserialiser
 import com.backwards.util.EitherOps.syntax._
 
 class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
@@ -48,7 +48,7 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get
-      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
             (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)

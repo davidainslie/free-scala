@@ -18,12 +18,12 @@ import com.backwards.auth.{Credentials, Password, User}
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.fp.free.FreeOps.syntax._
-import com.backwards.http
 import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.{Auth, Http, StubHttpInterpreter}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.serialisation.Deserialiser
 import com.backwards.util.EitherOps.syntax.EitherExtension
 
 class AlgebrasSpec extends AnyWordSpec with Matchers with Inspectors {
@@ -32,7 +32,7 @@ class AlgebrasSpec extends AnyWordSpec with Matchers with Inspectors {
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get
-      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
             (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)

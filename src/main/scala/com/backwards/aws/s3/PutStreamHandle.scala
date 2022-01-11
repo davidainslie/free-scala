@@ -4,6 +4,7 @@ import alex.mojaki.s3upload.{MultiPartOutputStream, StreamTransferManager}
 import cats.Show
 import cats.implicits._
 import software.amazon.awssdk.services.s3.model.Bucket
+import com.backwards.serialisation.Serialiser
 
 final case class PutStreamHandle(s3Client: S3Client, bucket: Bucket, key: String) {
   lazy val streamManager: StreamTransferManager =

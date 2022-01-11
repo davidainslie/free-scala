@@ -12,19 +12,18 @@ import io.circe.Json
 import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import com.backwards.aws.s3
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
-import com.backwards.http
 import com.backwards.http.Http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendOps.syntax.SttpBackendExtension
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.serialisation.{Deserialiser, Serialiser}
 
 /**
  * Interact with a real (though dummy) Http API and a LocalStack via Stream.
@@ -72,7 +71,7 @@ import com.backwards.json.JsonOps.syntax._
 object AlgebrasIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
-  implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+  implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
     val maxPages: Int = 5
 
     def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
