@@ -1,12 +1,13 @@
 package com.backwards.docker.aws
 
 import scala.util.Try
+import scala.util.chaining.scalaUtilChainingOps
+import cats.effect.Sync
 import cats.implicits._
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
 import com.dimafeng.testcontainers.LocalStackContainer
-import com.backwards.aws.s3.S3Client
+import com.backwards.aws.s3.{S3Client, awsCredentials}
 
 /**
  * List objects e.g.
@@ -21,14 +22,15 @@ trait WithAwsContainer {
 
   container.start()
 
-  sys.addShutdownHook(
-    (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
-  )
+  def s3Client[F[_]: Sync]: F[S3Client] = {
+    val shutdownHook: S3Client => Unit =
+      s3Client => sys.addShutdownHook(
+        (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
+      )
 
-  lazy val s3Client: S3Client =
-    S3Client(
-      DefaultCredentialsProvider.create.resolveCredentials,
-      Region.of(container.container.getRegion),
-      container.container.getEndpointOverride(Service.S3).some
+    awsCredentials[F]
+      .map(S3Client(_, Region.of(container.container.getRegion), container.container.getEndpointOverride(Service.S3).some)
+      .tap(shutdownHook)
     )
+  }
 }
