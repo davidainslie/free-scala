@@ -35,8 +35,6 @@ def project(id: String, base: File): Project =
       crossScalaVersions := supportedScalaVersions,
       addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-      libraryDependencies ++= Dependencies(),
-      exportJars := true,
       scalacOptions ++= Seq(
         "-encoding", "utf8",
         "-deprecation",
@@ -51,6 +49,8 @@ def project(id: String, base: File): Project =
         // "-Xfatal-warnings"
         // "-Ywarn-value-discard"
       ),
+      libraryDependencies ++= Dependencies(),
+      exportJars := true,
       fork := true,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,

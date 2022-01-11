@@ -5,8 +5,9 @@ import scala.util.Try
 import scala.util.chaining._
 import cats.effect.{Resource, Sync}
 import cats.implicits._
-import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.{AwsCredentials, AwsSessionCredentials}
 import software.amazon.awssdk.regions.Region
+import com.amazonaws.auth.BasicSessionCredentials
 import com.backwards.fp.FunctionOps.syntax._
 
 final case class S3Client(credentials: AwsCredentials, region: Region, endpoint: Option[URI] = None) {
@@ -21,7 +22,16 @@ final case class S3Client(credentials: AwsCredentials, region: Region, endpoint:
 
     lazy val sync: AmazonS3 =
       AmazonS3ClientBuilder.standard
-        .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(credentials.accessKeyId, credentials.secretAccessKey)))
+        .withCredentials(
+          new AWSStaticCredentialsProvider(
+            credentials match {
+              case sessionCredentials: AwsSessionCredentials =>
+                new BasicSessionCredentials(sessionCredentials.accessKeyId, sessionCredentials.secretAccessKey, sessionCredentials.sessionToken)
+              case _ =>
+                new BasicAWSCredentials(credentials.accessKeyId, credentials.secretAccessKey)
+            }
+          )
+        )
         .enablePathStyleAccess
         .foldOptional(endpoint)(_.withRegion(region.id))(builder => uri =>
           builder
@@ -31,19 +41,19 @@ final case class S3Client(credentials: AwsCredentials, region: Region, endpoint:
   }
 
   object v2 {
-    import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+    import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
     import software.amazon.awssdk.services.s3.{S3AsyncClient, S3AsyncClientBuilder, S3BaseClientBuilder, S3ClientBuilder, S3Client => S3SyncClient}
 
     // TODO - Consolidate code repetition of sync/async
     lazy val sync: S3SyncClient =
       S3SyncClient.builder
-        .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.accessKeyId, credentials.secretAccessKey)))
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
         .region(region)
         .optional(endpoint)(withEndpoint[S3SyncClient, S3ClientBuilder]).build
 
     lazy val async: S3AsyncClient =
       S3AsyncClient.builder
-        .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.accessKeyId, credentials.secretAccessKey)))
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
         .region(region)
         .optional(endpoint)(withEndpoint[S3AsyncClient, S3AsyncClientBuilder]).build
 
