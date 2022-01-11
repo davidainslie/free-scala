@@ -44,18 +44,14 @@ final case class S3Client(credentials: AwsCredentials, region: Region, endpoint:
     import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
     import software.amazon.awssdk.services.s3.{S3AsyncClient, S3AsyncClientBuilder, S3BaseClientBuilder, S3ClientBuilder, S3Client => S3SyncClient}
 
-    // TODO - Consolidate code repetition of sync/async
     lazy val sync: S3SyncClient =
-      S3SyncClient.builder
-        .credentialsProvider(StaticCredentialsProvider.create(credentials))
-        .region(region)
-        .optional(endpoint)(withEndpoint[S3SyncClient, S3ClientBuilder]).build
+      withCredentials[S3SyncClient, S3ClientBuilder](S3SyncClient.builder).build
 
     lazy val async: S3AsyncClient =
-      S3AsyncClient.builder
-        .credentialsProvider(StaticCredentialsProvider.create(credentials))
-        .region(region)
-        .optional(endpoint)(withEndpoint[S3AsyncClient, S3AsyncClientBuilder]).build
+      withCredentials[S3AsyncClient, S3AsyncClientBuilder](S3AsyncClient.builder).build
+
+    def withCredentials[C, B <: S3BaseClientBuilder[B, C]]: B => B =
+      _.credentialsProvider(StaticCredentialsProvider.create(credentials)).region(region).optional(endpoint)(withEndpoint[C, B])
 
     def withEndpoint[C, B <: S3BaseClientBuilder[B, C]]: B => URI => B =
       builder => uri => builder.endpointOverride(uri).tap(_ => scribe.info(s"aws --endpoint-url=$uri s3 ls --recursive"))
