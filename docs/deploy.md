@@ -7,9 +7,11 @@ terraform init
 
 terraform plan
 
-terraform apply
-terraform apply -auto-approve
+terraform apply -var-file="secrets.tfvars"
+# OR
+terraform apply -var-file="secrets.tfvars" -auto-approve
 
-terraform destroy
-terraform destroy -auto-approve
+terraform destroy -var-file="secrets.tfvars"
+# OR
+terraform destroy -var-file="secrets.tfvars" -auto-approve
 ```
