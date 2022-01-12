@@ -26,8 +26,9 @@ def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free
     _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
     response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
   } yield response
-
-// Where "paginate" is an extension method:
+```
+given "paginate" is an extension method:
+```scala
 def paginate: Free[F, Vector[Json]] = {
   def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
     (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
@@ -40,7 +41,7 @@ def paginate: Free[F, Vector[Json]] = {
     } yield data
 
   go(get, acc = Vector.empty, page = 1)
-}  
+}
 ```
 
 ### Get paginated Http streaming each page to S3 completing as one Object
@@ -55,8 +56,9 @@ def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free
     _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
     response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
   } yield response
-  
-// Where "paginate" is an extension method:
+```
+given "paginate" is an extension method:
+```scala
 def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
   def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
     for {
