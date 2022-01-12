@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxOptionId
 import io.circe.Json
 
 trait Serialiser[A] extends com.backwards.serialisation.Serialiser[A] {
-  val contentType: Option[String] // TODO - Not sure I like this being an Option but Nothing does map nicely to None
+  val contentType: ContentType
 }
 
 object Serialiser {
@@ -12,16 +12,16 @@ object Serialiser {
     implicitly
 
   implicit val serialiserNothing: Serialiser[Nothing] = new Serialiser[Nothing] {
-    val contentType: Option[String] =
-      None
+    val contentType: ContentType =
+      ContentType.empty // Some folks believe this should be "application/octet-stream"
 
     def serialise(data: Nothing): Array[Byte] =
       Array.emptyByteArray
   }
 
   implicit val serialiserJson: Serialiser[Json] = new Serialiser[Json] {
-    val contentType: Option[String] =
-      "application/json".some
+    val contentType: ContentType =
+      ContentType("application/json")
 
     def serialise(data: Json): Array[Byte] =
       data.noSpaces.getBytes

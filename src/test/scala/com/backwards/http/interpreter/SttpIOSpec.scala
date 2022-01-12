@@ -91,8 +91,8 @@ final case class Data(one: String, two: Int)
 object Data {
   implicit val serialiserData: Serialiser[Data] =
     new Serialiser[Data] {
-      val contentType: Option[String] =
-        "application/json".some
+      val contentType: ContentType =
+        ContentType("application/json")
 
       def serialise(data: Data): Array[Byte] =
         Json.obj(

@@ -19,7 +19,7 @@ object SttpInterpreter {
           case Post(uri, headers, params, auth, body, serialiser, deserialiser) =>
             basicRequest
               .post(Uri(uri).addParams(params.value))
-              .optional(serialiser.contentType)(_.contentType)
+              .optional(serialiser.contentType.value)(_.contentType)
               .headers(headers.value)
               .optional(auth)(applyAuth)
               .optional(body)(request => body => request.body(serialiser.serialise(body)))
@@ -35,7 +35,7 @@ object SttpInterpreter {
           case Put(uri, headers, params, auth, body, serialiser, deserialiser) =>
             basicRequest
               .put(Uri(uri).addParams(params.value))
-              .optional(serialiser.contentType)(_.contentType)
+              .optional(serialiser.contentType.value)(_.contentType)
               .headers(headers.value)
               .optional(auth)(applyAuth)
               .optional(body)(request => body => request.body(serialiser.serialise(body)))
