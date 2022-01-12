@@ -1,6 +1,8 @@
 package com.backwards.net
 
 import java.net.URI
+import scala.util.Try
+import io.circe.{Decoder, Encoder}
 
 object URIOps {
   object syntax {
@@ -18,5 +20,13 @@ object URIOps {
         }
       }
     }
+  }
+
+  object codec {
+    implicit val decoderUri: Decoder[URI] =
+      Decoder.decodeString.emapTry(s => Try(URI.create(s)))
+
+    implicit val encoderUri: Encoder[URI] =
+      Encoder.encodeString.contramap[URI](_.toString)
   }
 }

@@ -1,8 +1,10 @@
 package com.backwards.json
 
+import io.circe.generic.extras.codec.UnwrappedCodec
 import io.circe.syntax._
-import io.circe.{Json, JsonObject}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 import monocle.{Optional, Traversal}
+import shapeless.{::, Generic, HNil, Lazy}
 
 object JsonOps {
   object syntax {
@@ -30,5 +32,22 @@ object JsonOps {
       def getOption(json: JsonObject): Option[Json] =
         self.getOption(json.asJson)
     }
+  }
+
+  trait Codec {
+    /**
+     * Value Class decoding/encoding:
+     *
+     * Copied from io.circe.generic.extras.codec.UnwrappedCodec so can be used without Intellij thinking the following desired import is unused:
+     * {{{
+     *   import io.circe.generic.extras.codec.UnwrappedCoded._
+     * }}}
+     */
+    implicit def codecForUnwrapped[A, R](
+      implicit gen: Lazy[Generic.Aux[A, R :: HNil]],
+      decodeR: Decoder[R],
+      encodeR: Encoder[R]
+    ): UnwrappedCodec[A] =
+      UnwrappedCodec.codecForUnwrapped[A, R]
   }
 }
