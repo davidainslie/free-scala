@@ -9,6 +9,7 @@ import io.circe.parser._
 import io.circe.{Decoder, DecodingFailure, Encoder}
 import com.backwards.auth.Credentials
 import com.backwards.fp.ShowRefined
+import com.backwards.serialisation.{Deserialiser, DeserialiserError}
 
 sealed trait Auth
 

@@ -9,22 +9,21 @@ import cats.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
+import software.amazon.awssdk.services.s3.model.Bucket
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import com.backwards.aws.s3
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
 import com.backwards.fp.free.FreeOps.syntax._
-import com.backwards.http
 import com.backwards.http.Http
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendOps.syntax.SttpBackendExtension
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.json.Jsonl
+import com.backwards.serialisation.{Deserialiser, Serialiser}
 
 /**
  * Interact with a real (though dummy) Http API and a LocalStack via Stream.
@@ -72,15 +71,15 @@ import com.backwards.json.JsonOps.syntax._
 object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
   type Algebras[A] = EitherK[Http, S3, A]
 
-  implicit class GetOps(get: Get[Json])(implicit D: http.Deserialiser[Json], IH: InjectK[Http, Algebras], S: s3.Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+  implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Jsonl], IS: InjectK[S3, Algebras]) {
     val maxPages: Int = 5
 
     def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
         for {
           json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
-          _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+          data  <- Jsonl((json \ "data").flatMap(_.asArray)).liftFree[Algebras]
+          _     <- when(data.value.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
           //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
           pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
           _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
@@ -91,12 +90,12 @@ object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
     }
   }
 
-  def program(bucket: Bucket)(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+  def program(bucket: Bucket)(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
     for {
       _         <- CreateBucket(createBucketRequest(bucket))
       path      = "foo.txt"
       _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, path)
-      response  <- GetObject(getObjectRequest(bucket, path))
+      response  <- GetObject[Jsonl](getObjectRequest(bucket, path))
     } yield response
 
   def run: IO[Unit] = (
@@ -108,6 +107,6 @@ object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
     } yield (backend, s3Interpreter)
   ).use { case (backend, s3Interpreter) => program(bucket(sys.env("AWS_BUCKET"))).foldMap(SttpInterpreter(backend.logging) or s3Interpreter) }.attempt.flatMap {
     case Left(t)  => scribe.error(t).pipe(_ => IO.raiseError(t))
-    case Right(r) => scribe.info(new String(r.readAllBytes)).pipe(_ => IO.unit)
+    case Right(r) => scribe.info(r.show).pure[IO]
   }
 }

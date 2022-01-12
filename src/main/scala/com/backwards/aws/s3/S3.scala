@@ -4,9 +4,9 @@ import cats.InjectK
 import cats.free.Free
 import cats.free.Free._
 import cats.implicits._
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model._
+import com.backwards.serialisation.{Deserialiser, Serialiser}
 
 /**
  * Algebra to interact with AWS S3 via Free Monad
@@ -23,11 +23,16 @@ object S3 {
 
   final case class CompletePutStream(bucket: Bucket, key: String) extends S3[Unit]
 
-  final case class GetObject(request: GetObjectRequest) extends S3[ResponseInputStream[GetObjectResponse]]
+  final case class GetObject[A](request: GetObjectRequest, deserialiser: Deserialiser[A]) extends S3[A]
 
   object PutStream {
     def apply[A](bucket: Bucket, key: String, data: A)(implicit serialiser: Serialiser[A], dummy: DummyImplicit): PutStream[A] =
       apply(bucket, key, data, serialiser)
+  }
+
+  object GetObject {
+    def apply[A](request: GetObjectRequest)(implicit deserialiser: Deserialiser[A], dummy: DummyImplicit): GetObject[A] =
+      apply(request, deserialiser)
   }
 
   implicit def s3ToFree[F[_]: InjectK[S3, *[_]], A](fa: S3[A]): Free[F, A] =

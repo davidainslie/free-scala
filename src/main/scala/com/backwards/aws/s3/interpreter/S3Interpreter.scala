@@ -2,8 +2,8 @@ package com.backwards.aws.s3.interpreter
 
 import cats.implicits._
 import cats.{Id, ~>}
-import com.backwards.aws.s3.{S3, S3Client}
 import com.backwards.aws.s3.S3._
+import com.backwards.aws.s3.{S3, S3Client}
 
 /**
  * Default and simplest synchronous S3 Algebra Interpreter
@@ -22,8 +22,8 @@ object S3Interpreter {
           case PutStream(bucket, key, data, serialiser) =>
             ??? // TODO
 
-          case GetObject(request) =>
-            s3Client.v2.sync.getObject(request).asInstanceOf[A]
+          case GetObject(request, deserialiser) =>
+            deserialiser.deserialise(s3Client.v2.sync.getObject(request).readAllBytes).fold(throw _, identity)
         }
     }
 }

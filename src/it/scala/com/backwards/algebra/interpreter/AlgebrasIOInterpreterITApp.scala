@@ -1,6 +1,5 @@
 package com.backwards.algebra.interpreter
 
-import scala.util.Try
 import cats.InjectK
 import cats.data.EitherK
 import cats.effect.{IO, IOApp, Resource}
@@ -9,13 +8,11 @@ import cats.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3.S3._
+import com.backwards.aws.s3._
 import com.backwards.aws.s3.interpreter.S3IOInterpreter
-import com.backwards.aws.s3.{Deserialiser, _}
 import com.backwards.docker.aws.WithAwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.http.Http.Get._
@@ -24,6 +21,8 @@ import com.backwards.http.SttpBackendOps.syntax._
 import com.backwards.http._
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.json.Jsonl
+import com.backwards.serialisation.Deserialiser
 
 /**
  * Interact with a real (though dummy) Http API and a LocalStack.
@@ -89,18 +88,18 @@ object AlgebrasIOInterpreterITApp extends IOApp.Simple with WithAwsContainer {
     }
   }
 
-  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
     for {
       bucket    <- bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
       data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
       _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-      response  <- GetObject(getObjectRequest(bucket, "foo"))
+      response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
     } yield response
 
   // TODO Could try RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
     Resource.both(AsyncHttpClientCatsBackend.resource[IO](), S3IOInterpreter.resource(s3Client)).use { case (backend, s3Interpreter) =>
       program.foldMap(SttpInterpreter(backend.logging) or s3Interpreter)
-    } >>= (response => IO.fromEither(Try(new String(response.readAllBytes)).toEither)) >>= (result => IO(scribe.info(result)))
+    } map (response => scribe.info(response.show))
 }

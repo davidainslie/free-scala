@@ -3,9 +3,7 @@ package com.backwards.aws.s3.interpreter
 import cats.InjectK
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.free.Free
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import org.testcontainers.containers.localstack.LocalStackContainer.Service
@@ -28,16 +26,16 @@ class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers wit
 
   "S3 Algebra" should {
     "be applied against an async interpreter" in withMonadS3(container) { s3Client =>
-      def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
           bucket    <- bucket("my-bucket").liftFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[String](getObjectRequest(bucket, "foo"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(program.foldMap(_)).map(response =>
-        new String(response.readAllBytes) mustEqual "Blah blah"
+        response mustEqual "Blah blah"
       )
     }
   }

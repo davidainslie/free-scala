@@ -65,18 +65,20 @@ class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[
           hs.get(putStreamHandleKey).foreach(h => h.complete()).pipe(_ => hs - putStreamHandleKey)
         }.map(_.asInstanceOf[A])
 
-      case GetObject(request) =>
+      case GetObject(request, deserialiser) =>
         val asyncResponseTransformer: AsyncResponseTransformer[GetObjectResponse, ResponseBytes[GetObjectResponse]] =
           AsyncResponseTransformer.toBytes()
 
         val getObjectResponseFuture: CompletableFuture[ResponseBytes[GetObjectResponse]] =
           s3Client.v2.async.getObject(request, asyncResponseTransformer)
 
-        IO.fromCompletableFuture(IO(getObjectResponseFuture)).map(responseBytes =>
-          new ResponseInputStream[GetObjectResponse](
-            responseBytes.response(),
-            AbortableInputStream.create(responseBytes.asInputStream())
-          ).asInstanceOf[A]
+        IO.fromCompletableFuture(IO(getObjectResponseFuture)).flatMap(responseBytes =>
+          deserialiser.deserialise(
+            new ResponseInputStream[GetObjectResponse](
+              responseBytes.response(),
+              AbortableInputStream.create(responseBytes.asInputStream())
+            ).readAllBytes
+          ).fold(IO.raiseError, IO.pure)
         )
     }
 }

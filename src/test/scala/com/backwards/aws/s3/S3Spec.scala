@@ -16,18 +16,18 @@ import com.backwards.fp.free.FreeOps.syntax._
 class S3Spec extends AnyWordSpec with Matchers {
   "S3 Algebra" should {
     "be applied against a stubbed interpreter (a naive implementation that can just throw exceptions)" in {
-      def program(implicit I: InjectK[S3, S3]): Free[S3, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
           bucket    <- bucket("my-bucket").liftFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[String](getObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: Id[ResponseInputStream[GetObjectResponse]] =
+      val response: Id[String] =
         program.foldMap(S3StubInterpreter)
 
-      new String(response.readAllBytes) mustEqual "Blah blah"
+      response mustEqual "Blah blah"
     }
   }
 }
@@ -49,13 +49,15 @@ object S3StubInterpreter extends (S3 ~> Id) {
       case PutStream(bucket, key, data, serialiser) =>
         ??? // TODO
 
-      case GetObject(request) =>
+      case GetObject(request, deserialiser) =>
         val requestBody: RequestBody =
           buckets(request.bucket)(request.key)
 
-        new ResponseInputStream[GetObjectResponse](
-          GetObjectResponse.builder.build,
-          AbortableInputStream.create(requestBody.contentStreamProvider().newStream())
-        ).asInstanceOf[A]
+        deserialiser.deserialise(
+          new ResponseInputStream[GetObjectResponse](
+            GetObjectResponse.builder.build,
+            AbortableInputStream.create(requestBody.contentStreamProvider().newStream())
+          ).readAllBytes()
+        ).fold(throw _, identity)
     }
 }

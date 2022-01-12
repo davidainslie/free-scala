@@ -9,10 +9,7 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
-import io.circe.parser._
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import sttp.client3.SttpBackend
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
@@ -29,14 +26,14 @@ import com.backwards.aws.s3.interpreter.S3Interpreter
 import com.backwards.docker.aws.scalatest.AwsContainer
 import com.backwards.fp.free.FreeOps.syntax._
 import com.backwards.fp.implicits.monadErrorId
-import com.backwards.http
 import com.backwards.http.CredentialsSerialiser.serialiserCredentialsByClientCredentials
 import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
-import com.backwards.util.EitherOps.syntax.EitherExtension
+import com.backwards.json.Jsonl
+import com.backwards.serialisation.Deserialiser
 
 class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
@@ -47,7 +44,7 @@ class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors wi
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get
-      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: http.Deserialiser[Json]) {
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
         def paginate: Free[F, Vector[Json]] = {
           def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
             (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
@@ -87,20 +84,20 @@ class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors wi
           com.backwards.http.interpreter.SttpInterpreter(backend)
       }
 
-      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
         for {
           bucket    <- bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: Id[ResponseInputStream[GetObjectResponse]] =
+      val response: Jsonl =
         program.foldMap(SttpInterpreter() or S3Interpreter(s3Client))
 
-      new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
+      response.value must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
     }
   }
 }

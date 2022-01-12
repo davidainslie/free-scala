@@ -6,8 +6,8 @@ import com.backwards.auth.Credentials
 
 object CredentialsSerialiser {
   sealed trait CredentialsSerialiser extends Serialiser[Credentials] {
-    val contentType: Option[String] =
-      "application/x-www-form-urlencoded".some
+    val contentType: ContentType =
+      ContentType("application/x-www-form-urlencoded")
 
     val serialise: List[(String, String)] => Array[Byte] =
       _.map { case (key, value) =>
