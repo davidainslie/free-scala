@@ -11,10 +11,8 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
 import io.circe.literal.JsonStringContext
-import io.circe.parser._
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.{GetObjectResponse, NoSuchKeyException}
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client3.{HttpError, SttpBackend}
 import sttp.model.Method._
@@ -34,6 +32,7 @@ import com.backwards.http.Http._
 import com.backwards.http.SttpBackendStubOps.syntax._
 import com.backwards.http.{Auth, Bearer, Http}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.json.Jsonl
 import com.backwards.serialisation.Deserialiser
 import com.backwards.util.EitherOps.syntax._
 
@@ -88,18 +87,18 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
           com.backwards.http.interpreter.SttpInterpreter(backend)
       }
 
-      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
         for {
           bucket    <- bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).map(response =>
-        new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
+        response.value must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
       )
     }
 
@@ -119,14 +118,14 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
           com.backwards.http.interpreter.SttpInterpreter(backend)
       }
 
-      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Unit] =
         for {
           bucket    <- bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           _         <- Get[Json](uri("https://backwards.com/api/execute"))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Won't reach here"))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[Unit](getObjectRequest(bucket, "foo")) // As the test won't reach here, we don't care about the return
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map(_.leftValue).map {
@@ -164,14 +163,14 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
           com.backwards.http.interpreter.SttpInterpreter(backend)
       }
 
-      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Unit] =
         for {
           bucket    <- bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute"))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString((data \ "data").flatMap(_.asArray).combineAll.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(getObjectRequest(bucket, "WHOOPS"))
+          response  <- GetObject[Unit](getObjectRequest(bucket, "WHOOPS")) // As the test won't reach here, we don't care about the return
         } yield response
 
       S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).attempt.map(_.leftValue)

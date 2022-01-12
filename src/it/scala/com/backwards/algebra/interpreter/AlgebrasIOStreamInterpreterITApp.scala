@@ -1,6 +1,5 @@
 package com.backwards.algebra.interpreter
 
-import scala.util.Try
 import cats.InjectK
 import cats.data.EitherK
 import cats.effect.{IO, IOApp, Resource}
@@ -9,8 +8,7 @@ import cats.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import software.amazon.awssdk.core.ResponseInputStream
-import software.amazon.awssdk.services.s3.model.{Bucket, GetObjectResponse}
+import software.amazon.awssdk.services.s3.model.Bucket
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.backwards.aws.s3.S3._
 import com.backwards.aws.s3._
@@ -23,6 +21,7 @@ import com.backwards.http.Http._
 import com.backwards.http.SttpBackendOps.syntax.SttpBackendExtension
 import com.backwards.http.interpreter.SttpInterpreter
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.json.Jsonl
 import com.backwards.serialisation.{Deserialiser, Serialiser}
 
 /**
@@ -71,15 +70,15 @@ import com.backwards.serialisation.{Deserialiser, Serialiser}
 object AlgebrasIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
-  implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Vector[Json]], IS: InjectK[S3, Algebras]) {
+  implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Jsonl], IS: InjectK[S3, Algebras]) {
     val maxPages: Int = 5
 
     def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
         for {
           json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
-          _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+          data  <- Jsonl((json \ "data").flatMap(_.asArray)).liftFree[Algebras]
+          _     <- when(data.value.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
           //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
           pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
           _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
@@ -90,17 +89,17 @@ object AlgebrasIOStreamInterpreterITApp extends IOApp.Simple with WithAwsContain
     }
   }
 
-  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
     for {
       bucket    <- bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
       _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
-      response  <- GetObject(getObjectRequest(bucket, "foo"))
+      response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
     } yield response
 
   // TODO Could try RetryingBackend (and maybe Rate Limit): https://sttp.softwaremill.com/en/latest/backends/wrappers/custom.html
   def run: IO[Unit] =
     Resource.both(AsyncHttpClientCatsBackend.resource[IO](), S3IOInterpreter.resource(s3Client)).use { case (backend, s3Interpreter) =>
       program.foldMap(SttpInterpreter(backend.logging) or s3Interpreter)
-    } >>= (response => IO.fromEither(Try(new String(response.readAllBytes)).toEither)) >>= (result => IO(scribe.info(result)))
+    } map (response => scribe.info(response.show))
 }

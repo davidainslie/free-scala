@@ -18,15 +18,15 @@ Free Monad Algebra providing convenient program DSLs covering:
 Take a look at the example code [AlgebrasIOInterpreterITApp](src/it/scala/com/backwards/algebra/interpreter/AlgebrasIOInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
-def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
   for {
     bucket    <- bucket("my-bucket").liftFree[Algebras]
     _         <- CreateBucket(createBucketRequest(bucket))
     data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
     _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-    response  <- GetObject(getObjectRequest(bucket, "foo"))
+    response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
   } yield response
-  
+
 // Where "paginate" is an extension method:
 def paginate: Free[F, Vector[Json]] = {
   def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
@@ -36,11 +36,11 @@ def paginate: Free[F, Vector[Json]] = {
     for {
       content <- paramsL[Json].modify(_ + ("page" -> page))(get)
       pages   = (content \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0)
-      data    <- if (page < pages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
+      data    <- if (page < pages && page < maxPages) go(get, accumulate(acc, content), page + 1) else Free.pure[F, Vector[Json]](accumulate(acc, content))
     } yield data
 
   go(get, acc = Vector.empty, page = 1)
-}
+}  
 ```
 
 ### Get paginated Http streaming each page to S3 completing as one Object
@@ -48,12 +48,12 @@ def paginate: Free[F, Vector[Json]] = {
 Take a look at the example code [AlgebrasIOStreamInterpreterITApp](src/it/scala/com/backwards/algebra/interpreter/AlgebrasIOStreamInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
-def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
   for {
     bucket    <- bucket("my-bucket").liftFree[Algebras]
     _         <- CreateBucket(createBucketRequest(bucket))
     _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
-    response  <- GetObject(getObjectRequest(bucket, "foo"))
+    response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
   } yield response
   
 // Where "paginate" is an extension method:
@@ -61,10 +61,10 @@ def paginate(bucket: Bucket, key: String): Free[Algebras, Unit] = {
   def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
     for {
       json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
-      data  <- (json \ "data").flatMap(_.asArray).toVector.flatten.liftFree[Algebras]
-      _     <- when(data.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
+      data  <- Jsonl((json \ "data").flatMap(_.asArray)).liftFree[Algebras]
+      _     <- when(data.value.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
       pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
-      _     <- if (page < pages) go(get, page + 1) else unit[Algebras]
+      _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
     } yield ()
   }
 

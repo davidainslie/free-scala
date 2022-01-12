@@ -1,16 +1,13 @@
 package com.backwards.algebra.interpreter
 
+import cats.InjectK
 import cats.data.EitherK
 import cats.free.Free
 import cats.implicits._
-import cats.{Id, InjectK}
 import eu.timepit.refined.auto._
 import eu.timepit.refined.util.string.uri
 import io.circe.Json
-import io.circe.parser.parse
-import software.amazon.awssdk.core.ResponseInputStream
 import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import org.scalatest.Inspectors
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -23,8 +20,8 @@ import com.backwards.http.Http.Get._
 import com.backwards.http.Http._
 import com.backwards.http.{Auth, Http, StubHttpInterpreter}
 import com.backwards.json.JsonOps.syntax._
+import com.backwards.json.Jsonl
 import com.backwards.serialisation.Deserialiser
-import com.backwards.util.EitherOps.syntax.EitherExtension
 
 class AlgebrasSpec extends AnyWordSpec with Matchers with Inspectors {
   "Coproduct Algebras (in this case of Http and S3)" should {
@@ -47,20 +44,20 @@ class AlgebrasSpec extends AnyWordSpec with Matchers with Inspectors {
         }
       }
 
-      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, ResponseInputStream[GetObjectResponse]] =
+      def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
         for {
           bucket    <- bucket("my-bucket").liftFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
-          response  <- GetObject(getObjectRequest(bucket, "foo"))
+          response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
         } yield response
 
-      val response: Id[ResponseInputStream[GetObjectResponse]] =
+      val response: Jsonl =
         program.foldMap(StubHttpInterpreter or S3StubInterpreter)
 
-      new String(response.readAllBytes).split("\n").map(parse(_).rightValue) must contain allOf (StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2)
+      response.value must contain allOf (StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2)
     }
   }
 }
