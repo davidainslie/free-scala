@@ -27,7 +27,7 @@ package object implicits {
         f(fa)
 
       @tailrec
-      override def tailRecM[A, B](a: A)(f: A => Id[Either[A, B]]): Id[B] =
+      override def tailRecM[A, B](a: A)(f: A => Id[A Either B]): Id[B] =
         f(a) match {
           case Right(b) => b
           case Left(a) => tailRecM(a)(f)

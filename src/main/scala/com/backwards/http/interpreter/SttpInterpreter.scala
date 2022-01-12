@@ -64,7 +64,7 @@ object SttpInterpreter {
         }
     }
 
-  def applyAuth(request: RequestT[Identity, Either[String, String], Any]): Auth => RequestT[Identity, Either[String, String], Any] = {
+  def applyAuth(request: RequestT[Identity, String Either String, Any]): Auth => RequestT[Identity, String Either String, Any] = {
     case Basic(Credentials(User(user), Password(password))) => request.auth.basic(user, password)
     case BasicToken(token) => request.auth.basicToken(token)
     case Digest(Credentials(User(user), Password(password))) => request.auth.digest(user, password)
