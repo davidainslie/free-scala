@@ -22,7 +22,10 @@ object URIOps {
     }
   }
 
-  object codec {
+  /**
+   * A trait to avoid Intellij think that an import is unused.
+   */
+  trait Codec {
     implicit val decoderUri: Decoder[URI] =
       Decoder.decodeString.emapTry(s => Try(URI.create(s)))
 
