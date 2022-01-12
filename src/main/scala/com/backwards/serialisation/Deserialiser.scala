@@ -3,8 +3,8 @@ package com.backwards.serialisation
 import scala.util.Using
 import cats.Semigroup
 import cats.implicits._
+import io.circe.Json
 import io.circe.parser._
-import io.circe.{Json, ParsingFailure}
 import com.backwards.json.Jsonl
 
 trait Deserialiser[A] {
@@ -40,8 +40,8 @@ final case class DeserialiserError(message: String, cause: Option[Throwable] = N
   extends Exception(message, cause.fold(null.asInstanceOf[Throwable])(identity))
 
 object DeserialiserError {
-  def apply(parsingFailure: ParsingFailure): DeserialiserError =
-    DeserialiserError(parsingFailure.message, parsingFailure.underlying.some)
+  def apply(t: Throwable): DeserialiserError =
+    DeserialiserError(t.getMessage, Option(t.getCause))
 
   /**
    * Unfortunately we do not accumulate the cause of multiple errors
