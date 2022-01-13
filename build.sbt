@@ -4,7 +4,7 @@ lazy val root: Project =
   project("free-scala", file("."))
 
 lazy val thisScalaVersion: String =
-  "2.13.7"
+  "2.13.8"
 
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
