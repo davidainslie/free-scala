@@ -59,10 +59,11 @@ def project(id: String, base: File): Project =
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
       Docker / packageName := packageName.value,
-      Docker / version := "latest" /*version.value*/, // TODO - Sort out hack for Terraform
+      Docker / version := version.value,
+      dockerUpdateLatest := true,
       Docker / aggregate := false,
       dockerExposedPorts ++= Seq(9000, 9001)
-      //Docker / dockerEnvVars := envVars.value
+      // Docker / dockerEnvVars := envVars.value
       // Docker / dockerRepository
       // Docker / dockerUsername
     )
