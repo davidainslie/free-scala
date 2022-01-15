@@ -26,22 +26,20 @@ variable "s3-bucket" {
   sensitive   = true
 }
 
-variable "aws-access-key-id" {
-  description = "AWS_ACCESS_KEY_ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws-secret-access-key" {
-  description = "AWS_SECRET_ACCESS_KEY"
-  type        = string
-  sensitive   = true
-}
-
 variable "ec2-key" {
   default = "david" # TODO
 }
 
 variable "ec2-key-path" {
   default = "~/aws/credentials/david.pem" # TODO
+}
+
+data "external" "aws-credentials" {
+  program = ["bash", "scripts/aws-credentials.sh"]
+}
+
+locals {
+  aws-access-key-id = data.external.aws-credentials.result.aws-access-key-id
+  aws-secret-access-key = data.external.aws-credentials.result.aws-secret-access-key
+  aws-session-token = data.external.aws-credentials.result.aws-session-token
 }

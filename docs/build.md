@@ -50,3 +50,7 @@ docker run -it --rm \
 	-e AWS_BUCKET= \
 	free-scala:latest
 ```
+
+Quick note on the above commands usage in Terraform.
+We use `local` variables generated from running a local script that accesses AWS credentials based on `profile`.
+This [link](https://www.cloudwalker.io/2021/10/09/terraform-external-data-source/) explains the idea.
