@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "free-scala-ecr" {
-  name = "free-scala-ecr"
+  name = var.app
 }
 
 resource "aws_ecr_repository_policy" "free-scala-ecr-policy" {
