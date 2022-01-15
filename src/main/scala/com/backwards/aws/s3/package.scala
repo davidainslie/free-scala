@@ -5,9 +5,6 @@ import software.amazon.awssdk.auth.credentials.{AwsCredentials, DefaultCredentia
 import software.amazon.awssdk.services.s3.model._
 
 package object s3 {
-  /**
-   * @see [[software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider]]
-   */
   def awsCredentials[F[_]: Sync]: F[AwsCredentials] =
     Sync[F].delay(DefaultCredentialsProvider.create.resolveCredentials)
 

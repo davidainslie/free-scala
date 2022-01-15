@@ -83,7 +83,7 @@ resource "aws_instance" "free-scala-ec2" {
   security_groups = [aws_security_group.free-scala-aws-security-group.id]
 
   provisioner "file" {
-    source = "./install-docker.sh"
+    source = "scripts/install-docker.sh"
     destination = "/home/ec2-user/install-docker.sh"
 
     connection {
@@ -108,11 +108,11 @@ resource "aws_instance" "free-scala-ec2" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo chmod 777 /home/ec2-user/install-docker.sh",
       "cd /home/ec2-user/",
+      "sudo chmod 777 install-docker.sh",
       "./install-docker.sh",
       "echo ${data.aws_ecr_authorization_token.free-scala-ecr-token.password} | sudo docker login --username ${data.aws_ecr_authorization_token.free-scala-ecr-token.user_name} --password-stdin ${data.aws_ecr_authorization_token.free-scala-ecr-token.proxy_endpoint}",
-      "sudo docker run -t -d -e AWS_ACCESS_KEY_ID=${var.aws-access-key-id} -e AWS_SECRET_ACCESS_KEY=${var.aws-secret-access-key} -e AWS_REGION=${var.aws-region} -e AWS_BUCKET=${var.s3-bucket} ${local.docker-image}"
+      "sudo docker run -t -d -e AWS_ACCESS_KEY_ID=${local.aws-access-key-id} -e AWS_SECRET_ACCESS_KEY=${local.aws-secret-access-key} -e AWS_SESSION_TOKEN=${local.aws-session-token} -e AWS_REGION=${var.aws-region} -e AWS_BUCKET=${var.s3-bucket} ${local.docker-image}"
     ]
 
     connection {
