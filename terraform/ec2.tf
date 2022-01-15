@@ -1,3 +1,19 @@
+resource "tls_private_key" "private-key" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "aws_key_pair" "key-pair" {
+  key_name = "key-pair"
+  public_key = tls_private_key.private-key.public_key_openssh
+}
+
+resource "local_file" "pem-file" {
+  filename = pathexpand("./${aws_key_pair.key-pair.key_name}.pem")
+  file_permission = "600"
+  sensitive_content = tls_private_key.private-key.private_key_pem
+}
+
 resource "aws_vpc" "free-scala-aws-vpc" {
   cidr_block = "10.0.0.0/16"
 
@@ -79,7 +95,7 @@ resource "aws_instance" "free-scala-ec2" {
   instance_type = "t2.micro"
   ami = "ami-0d37e07bd4ff37148" # amazon_linux
   subnet_id = aws_subnet.free-scala-public-aws-subnet.id
-  key_name = var.ec2-key
+  key_name = aws_key_pair.key-pair.key_name
   security_groups = [aws_security_group.free-scala-aws-security-group.id]
 
   provisioner "file" {
@@ -88,9 +104,9 @@ resource "aws_instance" "free-scala-ec2" {
 
     connection {
       host = aws_instance.free-scala-ec2.public_ip
-      type     = "ssh"
-      user     = "ec2-user"
-      private_key = file(var.ec2-key-path)
+      type = "ssh"
+      user = "ec2-user"
+      private_key = tls_private_key.private-key.private_key_pem
     }
   }
 
@@ -100,8 +116,8 @@ resource "aws_instance" "free-scala-ec2" {
 
     connection {
       host = "${aws_instance.ec2.public_ip}"
-      type     = "ssh"
-      user     = "ec2-user"
+      type = "ssh"
+      user = "ec2-user"
       private_key = file(var.ec2_key_path)
     }
   }*/
@@ -117,9 +133,9 @@ resource "aws_instance" "free-scala-ec2" {
 
     connection {
       host = aws_instance.free-scala-ec2.public_ip
-      type     = "ssh"
-      user     = "ec2-user"
-      private_key = file(var.ec2-key-path)
+      type = "ssh"
+      user = "ec2-user"
+      private_key = tls_private_key.private-key.private_key_pem
     }
   }
 
@@ -135,7 +151,7 @@ resource "null_resource" "ssh-command" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo SSH = ssh -i ${var.ec2-key-path} ec2-user@${aws_instance.free-scala-ec2.public_ip}
+      echo SSH = ssh -i ${local_file.pem-file.filename} ec2-user@${aws_instance.free-scala-ec2.public_ip}
     EOT
   }
 }

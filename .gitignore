@@ -110,3 +110,5 @@ hs_err_pid*
 *.tfstate.*
 *.terraform.lock.hcl
 private_ips.txt
+*.pem
+**/*.pem
