@@ -35,7 +35,7 @@ variable "ec2-key-path" {
 }
 
 data "external" "aws-credentials" {
-  program = ["bash", "scripts/aws-credentials.sh"]
+  program = ["bash", "scripts/aws-credentials.sh", var.aws-profile]
 }
 
 locals {
