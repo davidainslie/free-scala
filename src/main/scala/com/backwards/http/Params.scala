@@ -10,6 +10,9 @@ final case class Params(value: Map[String, String] = Map.empty) extends AnyVal {
 }
 
 object Params {
+  def apply(kvs: (String, String)*): Params =
+    Params(kvs.toMap)
+
   def valueL: Lens[Params, Map[String, String]] =
     GenLens[Params](_.value)
 }
