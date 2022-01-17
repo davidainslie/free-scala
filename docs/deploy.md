@@ -1,6 +1,6 @@
 # Deploy
 
-We'll use Terraform:
+We'll use Terraform - Either deploy to [EC2](../terraform-ec2) or [ECS](../terraform-ecs) running the following within the relevant directory:
 
 ```shell
 terraform init
