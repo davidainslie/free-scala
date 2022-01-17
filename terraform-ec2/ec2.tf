@@ -22,6 +22,17 @@ resource "aws_vpc" "free-scala-aws-vpc" {
   }
 }
 
+resource "aws_subnet" "free-scala-public-aws-subnet" {
+  vpc_id = aws_vpc.free-scala-aws-vpc.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "${var.aws-region}a"
+  map_public_ip_on_launch = "true"
+
+  tags = {
+    Name = "free-scala-public-aws-subnet"
+  }
+}
+
 resource "aws_internet_gateway" "free-scala-aws-internet-gateway" {
   vpc_id = aws_vpc.free-scala-aws-vpc.id
 
@@ -40,17 +51,6 @@ resource "aws_route_table" "free-scala-aws-route-table" {
 
   tags = {
     Name = "free-scala-aws-route-table"
-  }
-}
-
-resource "aws_subnet" "free-scala-public-aws-subnet" {
-  vpc_id = aws_vpc.free-scala-aws-vpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "${var.aws-region}a"
-  map_public_ip_on_launch = "true"
-
-  tags = {
-    Name = "free-scala-public-aws-subnet"
   }
 }
 
