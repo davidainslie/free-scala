@@ -155,7 +155,3 @@ resource "null_resource" "ssh-command" {
     EOT
   }
 }
-
-output "ec2-ip" {
-  value = aws_instance.free-scala-ec2.public_ip
-}

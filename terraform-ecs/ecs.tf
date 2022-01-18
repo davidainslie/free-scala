@@ -31,10 +31,10 @@ resource "aws_security_group" "free-scala-aws-security-group" {
   name  = "free-scala-aws-security-group"
   vpc_id = aws_vpc.free-scala-aws-vpc.id
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -53,6 +53,13 @@ resource "aws_security_group" "free-scala-aws-security-group" {
     self        = "false"
     cidr_blocks = ["0.0.0.0/0"]
     description = "Port 80"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
