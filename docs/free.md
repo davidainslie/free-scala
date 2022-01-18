@@ -54,7 +54,7 @@ def program[F[_]: InjectK[Http, *[_]]]: Free[F, Result]
 ```
 but for this simplest case it is overkill, as we would have to pass in `Http` as our type to `program` which is somewhat redundant.
 
-Along with the use of `InjectK` our `implicit free` i.e. lifting becomes:
+Along with the use of `InjectK` our `implicit free` lifting becomes:
 
 ```scala
 import cats.free.Free
@@ -65,3 +65,5 @@ import com.backwards.http.Http
 implicit def httpToFree[F[_]: InjectK[Http, *[_]], A](fa: Http[A]): Free[F, A] =
   liftInject[F](fa)
 ```
+
+For an excellent blog on CoProduct and Inject see [The Free Monad with Multiple Algebras](https://underscore.io/blog/posts/2017/03/29/free-inject.html).
