@@ -9,6 +9,10 @@ import monocle.Lens
 import monocle.macros.GenLens
 import com.backwards.serialisation.Deserialiser
 
+/**
+ * Algebra to interact with Http via Free Monad
+ * @tparam A Outcome of application
+ */
 sealed trait Http[A] extends Product with Serializable
 
 // TODO - Factor out repetition in companion objects
