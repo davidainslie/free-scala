@@ -22,8 +22,8 @@ def project(id: String, base: File): Project =
       resolvers ++= Seq(
         Resolver sonatypeRepo "releases",
         Resolver sonatypeRepo "snapshots",
-        "jitpack" at "https://jitpack.io",
-        Resolver githubPackages "davidainslie"
+        "jitpack" at "https://jitpack.io"/*,
+        Resolver githubPackages "davidainslie"*/
       ),
       scalaVersion := thisScalaVersion,
       organization := "com.backwards",
