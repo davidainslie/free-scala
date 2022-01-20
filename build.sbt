@@ -54,6 +54,7 @@ def project(id: String, base: File): Project =
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+      credentials += Credentials(Path.userHome / ".sbt" / "1.0" / "sonatype.sbt"),
       publishTo := sonatypePublishToBundle.value,
       sonatypeProfileName := "davidainslie",
       publishMavenStyle := true,
