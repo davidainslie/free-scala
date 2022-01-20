@@ -12,9 +12,12 @@ Installation essentials:
 
 ```shell
 brew update
+brew install --cask temurin
 brew install scala
 brew install sbt
 brew install terraform
 brew install awscli
 brew install jq
 ```
+
+Note that you will need JDK 11 or above.

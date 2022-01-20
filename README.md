@@ -15,7 +15,7 @@ Free Monad Algebra providing convenient program DSLs covering:
 
 ### Get paginated Http accumulate each page and Put as one S3 Object
 
-Take a look at the example code [AlgebrasIOInterpreterITApp](src/it/scala/com/backwards/algebra/interpreter/AlgebrasIOInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
+Take a look at the example code [AlgebrasIOInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
@@ -46,7 +46,7 @@ def paginate: Free[F, Vector[Json]] = {
 
 ### Get paginated Http streaming each page to S3 completing as one Object
 
-Take a look at the example code [AlgebrasIOStreamInterpreterITApp](src/it/scala/com/backwards/algebra/interpreter/AlgebrasIOStreamInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
+Take a look at the example code [AlgebrasIOStreamInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOStreamInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
