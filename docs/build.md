@@ -26,14 +26,14 @@ sbt it:test
 
 Run IT apps (of multiple Algebra) which connect to a test Http API and LocalStack:
 ```shell
-sbt "it:runMain com.backwards.algebra.interpreter.AlgebrasIOInterpreterITApp"
+sbt "it:runMain tech.backwards.algebra.interpreter.AlgebrasIOInterpreterITApp"
 
-sbt "it:runMain com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterITApp"
+sbt "it:runMain tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterITApp"
 ```
 
 Run real world demo application (of multiple Algebra) connecting to test Http API and AWS:
 ```shell
-sbt "runMain com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"
+sbt "runMain tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"
 ```
 
 ## Docker
