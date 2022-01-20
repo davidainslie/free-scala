@@ -54,6 +54,7 @@ def project(id: String, base: File): Project =
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+      publishTo := Some("jitpack" at "https://jitpack.io"),
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
       Docker / packageName := packageName.value,
