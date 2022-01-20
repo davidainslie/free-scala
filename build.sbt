@@ -19,7 +19,8 @@ def project(id: String, base: File): Project =
     .settings(
       resolvers ++= Seq(
         Resolver sonatypeRepo "releases",
-        Resolver sonatypeRepo "snapshots"
+        Resolver sonatypeRepo "snapshots",
+        "jitpack" at "https://jitpack.io"
       ),
       scalaVersion := thisScalaVersion,
       organization := "tech.backwards",
@@ -50,18 +51,9 @@ def project(id: String, base: File): Project =
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
-      addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
-      publishMavenStyle := true,
-      publishTo := sonatypePublishToBundle.value,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
-      sonatypeProfileName := "davidainslie",
-      /*credentials += Credentials(Path.userHome / ".sbt" / "sonatype-credentials"),
-      publishTo := sonatypePublishToBundle.value,
-      sonatypeProfileName := "davidainslie",
-      publishMavenStyle := true,
-      licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-      sonatypeProjectHosting := Some(GitHubHosting("davidainslie", "free-scala", "dainslie@gmail.com")),*/
+      addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
       Docker / packageName := packageName.value,
