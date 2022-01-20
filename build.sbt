@@ -1,7 +1,5 @@
 import sbt.Keys.publishTo
 import sbt._
-import xerial.sbt.Sonatype.GitHubHosting
-import xerial.sbt.Sonatype.autoImport.sonatypePublishToBundle
 
 lazy val root: Project =
   project("free-scala", file("."))
