@@ -1,6 +1,7 @@
 import ReleaseTransformations._
 
-releaseCrossBuild := true // true if you cross-build the project for multiple Scala versions
+// true if you cross-build the project for multiple Scala versions
+releaseCrossBuild := false
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
