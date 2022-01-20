@@ -47,4 +47,11 @@ To check TXT record added correctly:
 dig -t txt backwards.tech
 
 https://oss.sonatype.org/#welcome
+
+
+pub   ed25519 2022-01-20 [SC] [expires: 2024-01-20]
+      3FE68021A844B6E64BD64614E076C783BD74003A
+uid           [ultimate] davidainslie <dainslie@gmail.com>
+sub   cv25519 2022-01-20 [E] [expires: 2024-01-20]
+
 ```
