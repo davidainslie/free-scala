@@ -45,4 +45,6 @@ https://central.sonatype.org/faq/how-to-set-txt-record/
 
 To check TXT record added correctly:
 dig -t txt backwards.tech
+
+https://oss.sonatype.org/#welcome
 ```

@@ -1,4 +1,7 @@
+import sbt.Keys.publishTo
 import sbt._
+import xerial.sbt.Sonatype.GitHubHosting
+import xerial.sbt.Sonatype.autoImport.sonatypePublishToBundle
 
 lazy val root: Project =
   project("free-scala", file("."))
@@ -51,6 +54,11 @@ def project(id: String, base: File): Project =
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+      publishTo := sonatypePublishToBundle.value,
+      sonatypeProfileName := "davidainslie",
+      publishMavenStyle := true,
+      licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      sonatypeProjectHosting := Some(GitHubHosting("davidainslie", "free-scala", "dainslie@gmail.com")),
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
       Docker / packageName := packageName.value,
