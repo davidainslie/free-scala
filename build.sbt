@@ -13,9 +13,9 @@ lazy val supportedScalaVersions: List[String] =
 ThisBuild / evictionErrorLevel := Level.Info
 ThisBuild / versionScheme := Some("early-semver")
 
-ThisBuild / organization := "com.example.project2"
-ThisBuild / organizationName := "example"
-ThisBuild / organizationHomepage := Some(url("http://example.com/"))
+ThisBuild / organization := "tech.backwards"
+ThisBuild / organizationName := "backwards"
+ThisBuild / organizationHomepage := Some(url("https://github.com/davidainslie/free-scala"))
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
