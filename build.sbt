@@ -10,34 +10,6 @@ lazy val thisScalaVersion: String =
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
 
-ThisBuild / evictionErrorLevel := Level.Info
-ThisBuild / versionScheme := Some("early-semver")
-
-ThisBuild / publishTo := sonatypePublishToBundle.value
-ThisBuild / sonatypeProfileName := organization.value
-
-publishMavenStyle := true
-Test / publishArtifact := false
-pomIncludeRepository := { _ => false }
-
-licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
-homepage := Some(url("https:/github.com/davidainslie/free-scala"))
-
-scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/davidainslie/free-scala"),
-    "scm:git@github.com/davidainslie/free-scala.git"
-  ))
-
-developers := List(
-  Developer(
-    id="davidainslie",
-    name="David Ainslie",
-    email="dainslie@gmail.com",
-    url=url("https://github.com/davidainslie/free-scala")
-  ))
-
-
 def project(id: String, base: File): Project =
   Project(id, base)
     .enablePlugins(JavaAppPackaging, DockerPlugin)
@@ -54,6 +26,8 @@ def project(id: String, base: File): Project =
       name := id,
       description := "Scala Free Monads",
       // crossScalaVersions := supportedScalaVersions,
+      evictionErrorLevel := Level.Info,
+      versionScheme := Some("early-semver"),
       addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       scalacOptions ++= Seq(
@@ -77,6 +51,11 @@ def project(id: String, base: File): Project =
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+      publishMavenStyle := true,
+      publishTo := sonatypePublishToBundle.value,
+      Test / publishArtifact := true,
+      IntegrationTest / publishArtifact := true,
+      sonatypeProfileName := "backwards.tech",
       /*credentials += Credentials(Path.userHome / ".sbt" / "sonatype-credentials"),
       publishTo := sonatypePublishToBundle.value,
       sonatypeProfileName := "davidainslie",
