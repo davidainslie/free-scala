@@ -9,9 +9,6 @@ lazy val thisScalaVersion: String =
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
 
-ThisBuild / evictionErrorLevel := Level.Info
-ThisBuild / versionScheme := Some("early-semver")
-
 def project(id: String, base: File): Project =
   Project(id, base)
     .enablePlugins(JavaAppPackaging, DockerPlugin)
@@ -21,18 +18,15 @@ def project(id: String, base: File): Project =
     .settings(
       resolvers ++= Seq(
         Resolver sonatypeRepo "releases",
-        Resolver sonatypeRepo "snapshots",
-        "jitpack" at "https://jitpack.io"/*,
-        Resolver githubPackages "davidainslie"*/
+        Resolver sonatypeRepo "snapshots"
       ),
       scalaVersion := thisScalaVersion,
-      organization := "com.backwards",
+      organization := "tech.backwards",
       name := id,
-      // githubOwner := "davidainslie",
-      // githubRepository := "free-scala",
-      // githubTokenSource := TokenSource.Or(TokenSource.Environment("GITHUB_TOKEN"), TokenSource.GitConfig("github.token")),
-      description := "Scala Free Monads by Backwards",
+      description := "Scala Free Monads",
       // crossScalaVersions := supportedScalaVersions,
+      evictionErrorLevel := Level.Info,
+      versionScheme := Some("early-semver"),
       addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       scalacOptions ++= Seq(
@@ -43,18 +37,18 @@ def project(id: String, base: File): Project =
         "-language:higherKinds",
         "-language:existentials",
         "-language:postfixOps",
-        // "-Ymacro-annotations",
+        "-Ymacro-annotations",
         "-Yrangepos",
         "-P:kind-projector:underscore-placeholders" // Can use _ instead of * when defining anonymous type lambdas
-        // "-Xfatal-warnings"
-        // "-Ywarn-value-discard"
+        //"-Xfatal-warnings"
+        //"-Ywarn-value-discard"
       ),
       libraryDependencies ++= Dependencies(),
       exportJars := true,
       fork := true,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
-      Compile / mainClass := Some("com.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
+      Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",

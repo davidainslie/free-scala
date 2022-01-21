@@ -4,7 +4,7 @@ Free programs (essentially a function) at the simplest level, would often be dec
 
 ```scala
 import cats.free.Free
-import com.backwards.http.Http
+import tech.backwards.http.Http
 
 type Result = String
 
@@ -17,7 +17,7 @@ To peform a `lift` we could declare e.g.
 ```scala
 import cats.free.Free
 import cats.free.Free.liftF
-import com.backwards.http.Http
+import tech.backwards.http.Http
 
 implicit def httpToFree[A](fa: Http[A]): Free[Http, A] =
   liftF(fa)
@@ -31,7 +31,7 @@ Instead, our simplest Algebra (even before multiple Algebra) we would declare a 
 import cats.free.Free
 import cats.free.Free.liftInject
 import cats.InjectK
-import com.backwards.http.Http
+import tech.backwards.http.Http
 
 type Result = String
 
@@ -46,7 +46,7 @@ Note the above `program with Inject` could be declared as:
 import cats.free.Free
 import cats.free.Free.liftInject
 import cats.InjectK
-import com.backwards.http.Http
+import tech.backwards.http.Http
 
 type Result = String
 
@@ -60,7 +60,7 @@ Along with the use of `InjectK` our `implicit free` lifting becomes:
 import cats.free.Free
 import cats.free.Free.liftInject
 import cats.InjectK
-import com.backwards.http.Http
+import tech.backwards.http.Http
 
 implicit def httpToFree[F[_]: InjectK[Http, *[_]], A](fa: Http[A]): Free[F, A] =
   liftInject[F](fa)
