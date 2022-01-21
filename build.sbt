@@ -10,6 +10,44 @@ lazy val thisScalaVersion: String =
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
 
+ThisBuild / organization := "tech.backwards"
+ThisBuild / organizationName := "davidainslie"
+ThisBuild / organizationHomepage := Some(url("https://github.com/davidainslie/free-scala"))
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/davidainslie/free-scala"),
+    "scm:git@github.davidainslie/free-scala.git"
+  )
+)
+
+ThisBuild / developers := List(
+  Developer(
+    id    = "davidainslie",
+    name  = "David Ainslie",
+    email = "dainslie@gmail.com",
+    url   = url("https://github.com/davidainslie/free-scala")
+  )
+)
+
+ThisBuild / description := "Scala Free Monads"
+ThisBuild / licenses := List("The Unlicense" -> new URL("https://unlicense.org/"))
+ThisBuild / homepage := Some(url("https://github.com/davidainslie/free-scala"))
+
+// Remove all additional repository other than Maven Central from POM
+ThisBuild / pomIncludeRepository := { _ => false }
+
+ThisBuild / publishTo := {
+  val nexus = "https://s01.oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+ThisBuild / publishMavenStyle := true
+
+ThisBuild / versionScheme := Some("early-semver")
+
+
 def project(id: String, base: File): Project =
   Project(id, base)
     .enablePlugins(JavaAppPackaging, DockerPlugin)
@@ -22,7 +60,7 @@ def project(id: String, base: File): Project =
         Resolver sonatypeRepo "snapshots"
       ),
       scalaVersion := thisScalaVersion,
-      organization := "tech.backwards",
+      //organization := "tech.backwards",
       name := id,
       description := "Scala Free Monads",
       // crossScalaVersions := supportedScalaVersions,
@@ -51,11 +89,11 @@ def project(id: String, base: File): Project =
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
-      publishMavenStyle := true,
+      /*publishMavenStyle := true,
       publishTo := sonatypePublishToBundle.value,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
-      sonatypeProfileName := "davidainslie",
+      sonatypeProfileName := "davidainslie",*/
       /*credentials += Credentials(Path.userHome / ".sbt" / "sonatype-credentials"),
       publishTo := sonatypePublishToBundle.value,
       sonatypeProfileName := "davidainslie",
