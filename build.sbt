@@ -38,7 +38,7 @@ ThisBuild / homepage := Some(url("https://github.com/davidainslie/free-scala"))
 ThisBuild / pomIncludeRepository := { _ => false }
 
 ThisBuild / publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
+  val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
