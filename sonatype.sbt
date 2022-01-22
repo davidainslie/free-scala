@@ -35,5 +35,27 @@ ThisBuild / publishTo := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
+// To sync with Maven central, supply the following information:
+Global / pomExtra := {
+  <url>https://github.com/davidainslie/free-scala</url>
+    <licenses>
+      <license>
+        <name>Apache License Version 2.0</name>
+        <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      </license>
+    </licenses>
 
+    <scm>
+      <connection>scm:git:github.com/davidainslie/free-scala</connection>
+      <developerConnection>scm:git:git@github.com:davidainslie/free-scala</developerConnection>
+      <url>https://github.com/davidainslie/free-scala</url>
+    </scm>
 
+    <developers>
+      <developer>
+        <id>davidainslie</id>
+        <name>David Ainslie</name>
+        <url>https://github.com/davidainslie/</url>
+      </developer>
+    </developers>
+}
