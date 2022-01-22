@@ -1,5 +1,7 @@
 import sbt._
 
+ThisBuild / dependencyCheckAssemblyAnalyzerEnabled := Some(false)
+
 lazy val root: Project =
   project("free-scala", file("."))
 
