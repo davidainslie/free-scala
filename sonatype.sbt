@@ -27,13 +27,13 @@ ThisBuild / developers := List(
 )
 
 // TODO - Check I'm correctly removing this
-// publishTo := sonatypePublishToBundle.value
+ThisBuild / publishTo := sonatypePublishToBundle.value
 
-ThisBuild / publishTo := {
+/*ThisBuild / publishTo := {
   val nexus = "https://s01.oss.sonatype.org/"
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
+}*/
 
 // To sync with Maven central, supply the following information:
 Global / pomExtra := {
