@@ -1,30 +1,17 @@
 import sbt._
 
-ThisBuild / dependencyCheckAssemblyAnalyzerEnabled := Some(false)
-
-lazy val root: Project =
-  project("free-scala", file("."))
-
 lazy val thisScalaVersion: String =
   "2.13.8"
 
 lazy val supportedScalaVersions: List[String] =
   List(thisScalaVersion, "2.12.15")
 
-def project(id: String, base: File): Project =
-  Project(id, base)
+lazy val root: Project =
+  Project("free-scala", file("."))
     .enablePlugins(JavaAppPackaging, DockerPlugin)
-    .configs(IntegrationTest extend Test)
-    .settings(inConfig(IntegrationTest extend Test)(Defaults.testSettings))
-    .settings(Defaults.itSettings)
     .settings(
-      resolvers ++= Seq(
-        Resolver sonatypeRepo "releases",
-        Resolver sonatypeRepo "snapshots"
-      ),
       scalaVersion := thisScalaVersion,
       organization := "tech.backwards",
-      name := id,
       description := "Scala Free Monads",
       // crossScalaVersions := supportedScalaVersions,
       evictionErrorLevel := Level.Info,
@@ -46,12 +33,18 @@ def project(id: String, base: File): Project =
         //"-Ywarn-value-discard"
       ),
       libraryDependencies ++= Dependencies(),
+      dependencyCheckAssemblyAnalyzerEnabled := Some(false),
       exportJars := true,
       fork := true,
       Test / publishArtifact := true,
       IntegrationTest / publishArtifact := true,
       Compile / mainClass := Some("tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterApp"),
       addArtifact(IntegrationTest / packageBin / artifact, IntegrationTest / packageBin).settings,
+    )
+    .configs(IntegrationTest extend Test)
+    .settings(inConfig(IntegrationTest extend Test)(Defaults.testSettings): _*)
+    .settings(Defaults.itSettings: _*)
+    .settings(
       dockerBaseImage := "eclipse-temurin:17.0.1_12-jre-focal",
       Docker / maintainer := "Backwards",
       Docker / packageName := packageName.value,
