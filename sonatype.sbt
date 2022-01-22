@@ -7,10 +7,8 @@ ThisBuild / homepage := Some(url("https://github.com/davidainslie/free-scala"))
 ThisBuild / licenses := List("The Unlicense" -> new URL("https://unlicense.org/"))
 ThisBuild / pomIncludeRepository := { _ => false }
 ThisBuild / publishMavenStyle := true
-
 ThisBuild / sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -28,11 +26,8 @@ ThisBuild / developers := List(
   )
 )
 
-
-publishTo := sonatypePublishToBundle.value
-
-// Remove all additional repository other than Maven Central from POM
-
+// TODO - Check I'm correctly removing this
+// publishTo := sonatypePublishToBundle.value
 
 ThisBuild / publishTo := {
   val nexus = "https://s01.oss.sonatype.org/"

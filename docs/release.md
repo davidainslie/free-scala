@@ -1,57 +1,85 @@
 # Release
 
-[Sonatype](https://issues.sonatype.org/secure/Dashboard.jspa)
+[Here](https://dev.to/awwsmm/publish-your-scala-project-to-maven-in-5-minutes-with-sonatype-326l) there are some things to watch our for.
+And the [official guide](https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html).
 
-Latest release:
+We are using the following two plugins (along with `sbt-release`) to publish to [Sonatype](https://issues.sonatype.org/secure/Dashboard.jspa) at [Nexus](https://s01.oss.sonatype.org):
+- addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.10")
+- addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")
+
+## Key
+
 ```shell
-sbt release
+gpg --version
+
+# Generate key
+gpg --gen-key
+
+# List keys
+gpg --list-keys
+
+# Distribute the key
+gpg --keyserver keyserver.ubuntu.com --send-keys xxxxx
 ```
 
-Cross release:
+## Credentials
+
 ```shell
-sbt release cross
+touch ~/.sbt/1.0/sonatype.sbt
+code ~/.sbt/1.0/sonatype.sbt # Or whatever editor
+
+# Add:
+credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
+
+touch ~/.sbt/sonatype_credentials
+code ~/.sbt/sonatype_credentials
+
+# Add:
+realm=Sonatype Nexus Repository Manager
+host=s01.oss.sonatype.org
+user=davidainslie
+password=xxxxx
 ```
 
-Release with defaults (as the above ask release questions):
+Then configure by taking a look at [sonatype.sbt](../sonatype.sbt).
+
+## Release and Publish
+
 ```shell
 sbt "release with-defaults"
-OR
+
+# Or to include "cross"
 sbt "release cross with-defaults"
 ```
 
-## Publish
-
-The build includes the [Daniel Spiewak plugin](https://dev.to/gjuoun/publish-your-scala-library-to-github-packages-4p80) to publish to GitHub Packages.
-
-We can directly issue a `publish` command, where the above release process includes this:
+Under the hood, `release` will call:
 ```shell
-sbt +publish
-
-
 sbt publishSigned
-
-brew install pinentry-mac
-
-Added to profile:
-GPG_TTY=$(tty)
-export GPG_TTY
-
-
-If you do not own this domain, you may also choose a different Group Id that reflects your project hosting. io.github.davidainslie would be valid based on your Project URL.
-To continue the registration process, please follow these steps:
-Create a temporary, public repository called https://github.com/davidainslie/OSSRH-77460 to verify github account ownership.
-
-https://central.sonatype.org/faq/how-to-set-txt-record/
-
-To check TXT record added correctly:
-dig -t txt backwards.tech
-
-https://oss.sonatype.org/#welcome
-
-
-pub   ed25519 2022-01-20 [SC] [expires: 2024-01-20]
-      3FE68021A844B6E64BD64614E076C783BD74003A
-uid           [ultimate] davidainslie <dainslie@gmail.com>
-sub   cv25519 2022-01-20 [E] [expires: 2024-01-20]
-
+sbt sonatypeBundleRelease
 ```
+
+View the release at:
+https://s01.oss.sonatype.org/content/repositories/releases/tech/backwards/free-scala_2.13/
+
+## Notes for New Project
+
+To publish a new project to Sonatype, raise a ticket at https://issues.sonatype.org.
+
+Example of filling in details along with validating your domain i.e. `group ID`:
+
+| Type        | New Project                                    |
+| ----------- | ---------------------------------------------- |
+| Group Id    | tech.backwards                                 |
+| Project URL | https://github.com/davidainslie/free-scala     |
+| SCM url     | https://github.com/davidainslie/free-scala.git |
+| Username    | davidainslie                                   |
+
+To validate your domain:
+
+- Add DNS TEXT record with text from the raised ticket
+
+- To check the record was added correctly:
+
+  - ```shell
+    dig -t txt backwards.tech
+    ```

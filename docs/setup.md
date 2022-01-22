@@ -18,6 +18,7 @@ brew install sbt
 brew install terraform
 brew install awscli
 brew install jq
+brew install gnupg
 ```
 
 Note that you will need JDK 11 or above.
