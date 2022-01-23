@@ -29,6 +29,23 @@ class S3Spec extends AnyWordSpec with Matchers {
 
       response mustEqual "Blah blah"
     }
+
+    "context bound alternative - be applied against a stubbed interpreter (a naive implementation that can just throw exceptions)" in {
+      type `S3~>S3`[_] = InjectK[S3, S3]
+
+      def program[F: `S3~>S3`]: Free[S3, String] =
+        for {
+          bucket    <- bucket("my-bucket").liftFree[S3]
+          _         <- CreateBucket(createBucketRequest(bucket))
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
+          response  <- GetObject[String](getObjectRequest(bucket, "foo"))
+        } yield response
+
+      val response: Id[String] =
+        program.foldMap(S3StubInterpreter)
+
+      response mustEqual "Blah blah"
+    }
   }
 }
 
