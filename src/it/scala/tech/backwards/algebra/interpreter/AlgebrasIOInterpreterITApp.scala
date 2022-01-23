@@ -70,6 +70,10 @@ import tech.backwards.serialisation.Deserialiser
 object AlgebrasIOInterpreterITApp extends IOApp.Simple with WithAwsContainer {
   type Algebras[A] = EitherK[Http, S3, A]
 
+  type `Http~>Algebras`[_] = InjectK[Http, Algebras]
+
+  type `S3~>Algebras`[_] = InjectK[S3, Algebras]
+
   implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
     val maxPages: Int = 5
 
@@ -88,7 +92,7 @@ object AlgebrasIOInterpreterITApp extends IOApp.Simple with WithAwsContainer {
     }
   }
 
-  def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
+  def program[F: `Http~>Algebras`: `S3~>Algebras`]: Free[Algebras, Jsonl] =
     for {
       bucket    <- bucket("my-bucket").liftFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))

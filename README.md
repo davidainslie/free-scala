@@ -28,12 +28,24 @@ libraryDependencies ++= {
 
 ## Examples
 
-### Get paginated Http accumulate each page and Put as one S3 Object
+The following two examples use more than one `Algebra`, specifically `Http` and `S3`, so we use the following type alias:
+
+```scala
+type Algebras[A] = EitherK[Http, S3, A]
+```
+
+Also, the first example shows the use of `Context Bound` to express the `Algebras` dependency, whereas the second uses `implicit parameters`.
+
+## Get paginated Http accumulate each page and Put as one S3 Object
 
 Take a look at the example code [AlgebrasIOInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
-def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
+type `Http~>Algebras`[_] = InjectK[Http, Algebras]
+
+type `S3~>Algebras`[_] = InjectK[S3, Algebras]
+
+def program[F: `Http~>Algebras`: `S3~>Algebras`]: Free[Algebras, Jsonl] =
   for {
     bucket    <- bucket("my-bucket").liftFree[Algebras]
     _         <- CreateBucket(createBucketRequest(bucket))
@@ -59,7 +71,7 @@ def paginate: Free[F, Vector[Json]] = {
 }
 ```
 
-### Get paginated Http streaming each page to S3 completing as one Object
+## Get paginated Http streaming each page to S3 completing as one Object
 
 Take a look at the example code [AlgebrasIOStreamInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOStreamInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
 

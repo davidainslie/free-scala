@@ -11,14 +11,14 @@ object Dependencies {
     ).flatten
 
   lazy val scalaMeta: Seq[ModuleID] =
-    List("org.scalameta" %% "scalameta" % "4.4.31")
+    List("org.scalameta" %% "scalameta" % "4.4.33")
 
   lazy val scalatest: Seq[ModuleID] =
     List("org.scalatest" %% "scalatest" % "3.2.10" % "test, it" withSources() withJavadoc())
 
   lazy val specs2: Seq[ModuleID] = {
     val group = "org.specs2"
-    val version = "4.13.1"
+    val version = "4.13.2"
 
     List(
       "specs2-core", "specs2-scalacheck", "specs2-matcher-extra", "specs2-cats", "specs2-shapeless"
@@ -43,7 +43,7 @@ object Dependencies {
 
   lazy val log4Cats: Seq[ModuleID] = {
     val group = "org.typelevel"
-    val version = "2.1.1"
+    val version = "2.2.0"
 
     List(
       "log4cats-core", "log4cats-slf4j"
@@ -51,7 +51,7 @@ object Dependencies {
   }
 
   lazy val scribe: Seq[ModuleID] =
-    List("com.outr" %% "scribe" % "3.6.4" withSources() withJavadoc())
+    List("com.outr" %% "scribe" % "3.6.10" withSources() withJavadoc())
 
   lazy val pprint: Seq[ModuleID] =
     List("com.lihaoyi" %% "pprint" % "0.7.1")
@@ -151,7 +151,7 @@ object Dependencies {
 
   lazy val sttp: Seq[ModuleID] = {
     val group = "com.softwaremill.sttp.client3"
-    val version = "3.3.18"
+    val version = "3.4.0"
 
     List(
       "core", "circe", "scribe-backend",
@@ -162,7 +162,7 @@ object Dependencies {
 
   lazy val awsJava: Seq[ModuleID] = {
     val group = "software.amazon.awssdk"
-    val version = "2.17.102"
+    val version = "2.17.116"
 
     List(
       "aws-core", "sdk-core", "regions", "auth", "utils", "s3"
@@ -171,7 +171,7 @@ object Dependencies {
 
   lazy val awsJavaLegacy: Seq[ModuleID] = {
     val group = "com.amazonaws"
-    val version = "1.12.131"
+    val version = "1.12.145"
 
     List(
       "aws-java-sdk-core"

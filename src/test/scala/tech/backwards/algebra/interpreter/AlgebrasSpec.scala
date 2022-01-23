@@ -59,5 +59,44 @@ class AlgebrasSpec extends AnyWordSpec with Matchers with Inspectors {
 
       response.value must contain allOf (StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2)
     }
+
+    "context bound alternative - be applied against stubbed interpreters" in {
+      type Algebras[A] = EitherK[Http, S3, A]
+
+      type `Http~>Algebras`[_] = InjectK[Http, Algebras]
+
+      type `S3~>Algebras`[_] = InjectK[S3, Algebras]
+
+      // Example of paginating a Http Get
+      implicit class GetOps[F[_]: InjectK[Http, *[_]]](get: Get[Json])(implicit D: Deserialiser[Json]) {
+        def paginate: Free[F, Vector[Json]] = {
+          def accumulate(acc: Vector[Json], json: Json): Vector[Json] =
+            (json \ "data").flatMap(_.asArray).fold(acc)(acc ++ _)
+
+          def go(get: Get[Json], acc: Vector[Json], skip: Int, limit: Int): Free[F, Vector[Json]] =
+            for {
+              content <- paramsL[Json].modify(_ + ("skip" -> skip) + ("limit" -> limit))(get)
+              data    <- if (skip < 50) go(get, accumulate(acc, content), skip + 10, limit) else Free.pure[F, Vector[Json]](accumulate(acc, content))
+            } yield data
+
+          go(get, acc = Vector.empty, skip = 0, limit = 10)
+        }
+      }
+
+      def program[F: `Http~>Algebras`: `S3~>Algebras`]: Free[Algebras, Jsonl] =
+        for {
+          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          _         <- CreateBucket(createBucketRequest(bucket))
+          _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
+          data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
+          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))
+          response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
+        } yield response
+
+      val response: Jsonl =
+        program.foldMap(StubHttpInterpreter or S3StubInterpreter)
+
+      response.value must contain allOf (StubHttpInterpreter.dataEntry1, StubHttpInterpreter.dataEntry2)
+    }
   }
 }
