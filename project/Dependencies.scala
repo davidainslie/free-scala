@@ -14,7 +14,7 @@ object Dependencies {
     List("org.scalameta" %% "scalameta" % "4.4.33")
 
   lazy val scalatest: Seq[ModuleID] =
-    List("org.scalatest" %% "scalatest" % "3.2.10" % "test, it" withSources() withJavadoc())
+    List("org.scalatest" %% "scalatest" % "3.2.11" % "test, it" withSources() withJavadoc())
 
   lazy val specs2: Seq[ModuleID] = {
     val group = "org.specs2"
@@ -30,7 +30,7 @@ object Dependencies {
 
   lazy val scalatestContainers: Seq[ModuleID] = {
     val group = "com.dimafeng"
-    val version = "0.39.12"
+    val version = "0.40.0"
 
     List(
       "testcontainers-scala-scalatest", "testcontainers-scala-munit",
@@ -69,7 +69,7 @@ object Dependencies {
 
   lazy val catsEffect: Seq[ModuleID] = {
     val group = "org.typelevel"
-    val version = "3.3.1"
+    val version = "3.3.5"
 
     List(
       "cats-effect"
@@ -95,7 +95,7 @@ object Dependencies {
     List("io.scalaland" %% "catnip" % "1.1.2")
 
   lazy val mouse: Seq[ModuleID] =
-    List("org.typelevel" %% "mouse" % "1.0.8" withSources() withJavadoc())
+    List("org.typelevel" %% "mouse" % "1.0.9" withSources() withJavadoc())
 
   lazy val simulacrum: Seq[ModuleID] =
     List("org.typelevel" %% "simulacrum" % "1.0.1" withSources() withJavadoc())
@@ -110,8 +110,8 @@ object Dependencies {
   }
 
   lazy val monocle: Seq[ModuleID] = {
-    val group = "com.github.julien-truffaut"
-    val version = "2.1.0"
+    val group = "dev.optics"
+    val version = "3.1.0"
 
     List(
       "monocle-core", "monocle-macro", "monocle-generic"
@@ -151,7 +151,7 @@ object Dependencies {
 
   lazy val sttp: Seq[ModuleID] = {
     val group = "com.softwaremill.sttp.client3"
-    val version = "3.4.0"
+    val version = "3.4.1"
 
     List(
       "core", "circe", "scribe-backend",
@@ -162,7 +162,7 @@ object Dependencies {
 
   lazy val awsJava: Seq[ModuleID] = {
     val group = "software.amazon.awssdk"
-    val version = "2.17.116"
+    val version = "2.17.121"
 
     List(
       "aws-core", "sdk-core", "regions", "auth", "utils", "s3"
@@ -171,7 +171,7 @@ object Dependencies {
 
   lazy val awsJavaLegacy: Seq[ModuleID] = {
     val group = "com.amazonaws"
-    val version = "1.12.145"
+    val version = "1.12.150"
 
     List(
       "aws-java-sdk-core"
