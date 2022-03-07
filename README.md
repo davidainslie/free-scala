@@ -4,6 +4,7 @@
 - [Build](docs/build.md)
 - [Release](docs/release.md)
 - [Deploy](docs/deploy.md)
+- [Terraform](docs/terraform.md)
 - [Free](docs/free.md)
 
 Free Monad Algebra providing convenient program DSLs covering:

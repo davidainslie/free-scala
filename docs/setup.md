@@ -16,6 +16,7 @@ brew install --cask temurin
 brew install scala
 brew install sbt
 brew install terraform
+brew install cdktf
 brew install awscli
 brew install jq
 brew install gnupg
@@ -42,5 +43,5 @@ sbt dependencyCheck
 
 And you should double check for any secrets you may have checked into Git:
 ```shell
-git secrets scan
+git secrets --scan
 ```
