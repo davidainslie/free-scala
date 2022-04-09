@@ -25,7 +25,7 @@ class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers wit
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against an async interpreter" in withMonadS3(container) { s3Client =>
+    "be applied against an async interpreter" in withS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
           bucket    <- bucket("my-bucket").liftFree[S3]

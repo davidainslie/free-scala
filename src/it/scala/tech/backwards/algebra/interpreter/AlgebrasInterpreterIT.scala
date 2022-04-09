@@ -40,7 +40,7 @@ class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors wi
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against sync interpreters" in withS3(container) { s3Client =>
+    "be applied against sync interpreters" in withS3[Id](container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get

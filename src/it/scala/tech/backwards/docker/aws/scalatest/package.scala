@@ -6,10 +6,10 @@ package object scalatest {
   import cats.implicits._
   import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
   import software.amazon.awssdk.regions.Region
+  import tech.backwards.aws.s3.S3Client
   import org.scalatest.Assertion
   import org.testcontainers.containers.localstack.LocalStackContainer.Service
   import com.dimafeng.testcontainers.LocalStackContainer
-  import tech.backwards.aws.s3.S3Client
 
   /**
    * List objects e.g.
@@ -18,7 +18,7 @@ package object scalatest {
    * View object e.g.
    *  - aws --endpoint-url=http://127.0.0.1:54998 s3 cp s3://my-bucket/foo -
    */
-  trait AwsContainer { self =>
+  trait AwsContainer {
     private def s3Client(container: LocalStackContainer): S3Client =
       S3Client(
         AwsBasicCredentials.create(container.container.getAccessKey, container.container.getSecretKey),
@@ -26,19 +26,9 @@ package object scalatest {
         container.container.getEndpointOverride(Service.S3).some
       )
 
-    def withS3(container: LocalStackContainer)(test: S3Client => Assertion): Assertion = {
-      val s3Client: S3Client =
-        self.s3Client(container)
-
-      try test(s3Client) finally s3Client.close()
-    }
-
-    def withMonadS3[F[_]: MonadError[*[_], Throwable]](container: LocalStackContainer)(test: S3Client => F[Assertion]): F[Assertion] =
-      for {
-        s3Client <- MonadError[F, Throwable].pure(self.s3Client(container))
-        result   <- test(s3Client).attempt
-        _ = Try(s3Client.close())
-      } yield
-        result.fold(throw _, identity)
+    def withS3[F[_]: MonadError[*[_], Throwable]](container: LocalStackContainer)(test: S3Client => F[Assertion]): F[Assertion] =
+      MonadError[F, Throwable].pure(s3Client(container)).flatMap(s3Client =>
+        test(s3Client).attempt.flatTap(_ => MonadError[F, Throwable].pure(Try(s3Client.close())))
+      ).map(_.fold(throw _, identity))
   }
 }
