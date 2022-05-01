@@ -78,10 +78,10 @@ object HttpS3StreamApp extends IOApp.Simple {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
         for {
           json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          data  <- Jsonl((json \ "data").flatMap(_.asArray)).liftFree[Algebras]
+          data  <- Jsonl((json \ "data").flatMap(_.asArray)).toFree[Algebras]
           _     <- when(data.value.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
           //_   <- (if (true) throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
-          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
+          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).toFree[Algebras]
           _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
         } yield ()
       }

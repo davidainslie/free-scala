@@ -1,18 +1,14 @@
-package tech.backwards.db
+package tech.backwards.db.doobie
 
+import cats.effect._
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.implicits._
+import doobie._
+import org.flywaydb.core.Flyway
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
-import com.dimafeng.testcontainers.{Container, ForAllTestContainer, PostgreSQLContainer}
-import doobie._
-import doobie.implicits._
-import cats._
-import cats.effect._
-import cats.implicits._
-import org.flywaydb.core.Flyway
 import org.testcontainers.utility.DockerImageName
-import fly4s.core._
-import fly4s.core.data._
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 
 class DoobieIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer {
   override val container: PostgreSQLContainer =

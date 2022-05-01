@@ -15,7 +15,7 @@ object SttpBackendOps {
           logRequestBody = true,
           responseLogLevel = _ => LogLevel.Info,
           logResponseHeaders = true,
-          logResponseBody = false
+          logResponseBody = true
         )
     }
   }

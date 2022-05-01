@@ -89,7 +89,7 @@ class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matche
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          bucket    <- bucket("my-bucket").toFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
@@ -97,8 +97,8 @@ class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matche
           response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
         } yield response
 
-      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).map(response =>
-        response.value must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
+      S3IOInterpreter.resource(s3Client).use(s3Interpreter => program.foldMap(SttpInterpreter() or s3Interpreter)).map(
+        _.value must contain allOf (SttpInterpreter.dataEntry1, SttpInterpreter.dataEntry2)
       )
     }
 
@@ -120,7 +120,7 @@ class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matche
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Unit] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          bucket    <- bucket("my-bucket").toFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           _         <- Get[Json](uri("https://backwards.com/api/execute"))
@@ -165,7 +165,7 @@ class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matche
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Unit] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          bucket    <- bucket("my-bucket").toFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute"))
