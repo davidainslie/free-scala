@@ -1,6 +1,6 @@
 package tech.backwards.aws.s3.interpreter
 
-import cats.InjectK
+import cats.{Id, InjectK}
 import cats.free.Free
 import software.amazon.awssdk.core.sync.RequestBody
 import org.scalatest.matchers.must.Matchers
@@ -20,12 +20,12 @@ import tech.backwards.fp.implicits._
  * View object:
  *  - aws --endpoint-url=http://127.0.0.1:54998 s3 cp s3://my-bucket/foo -
  */
-class S3InterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer with AwsContainer {
+class S3InterpreterIntegrationSpec extends AnyWordSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against a default sync interpreter" in withS3(container) { s3Client =>
+    "be applied against a default sync interpreter" in withS3[Id](container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
           bucket    <- bucket("my-bucket").liftFree[S3]
@@ -40,7 +40,7 @@ class S3InterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer
       response mustEqual "Blah blah"
     }
 
-    "be applied but fail against a default sync interpreter" in withS3(container) { s3Client =>
+    "be applied but fail against a default sync interpreter" in withS3[Id](container) { s3Client =>
       val exception: Exception =
         new Exception("whoops")
 

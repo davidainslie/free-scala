@@ -36,12 +36,12 @@ import tech.backwards.json.Jsonl
 import tech.backwards.serialisation.Deserialiser
 import tech.backwards.util.EitherOps.syntax._
 
-class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
+class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against async interpreters" in withMonadS3(container) { s3Client =>
+    "be applied against async interpreters" in withS3(container) { s3Client =>
       import tech.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -102,7 +102,7 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
       )
     }
 
-    "be applied against async interpreters where Http exceptions are captured via MonadError" in withMonadS3(container) { s3Client =>
+    "be applied against async interpreters where Http exceptions are captured via MonadError" in withS3(container) { s3Client =>
       import tech.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]
@@ -133,7 +133,7 @@ class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matche
       }
     }
 
-    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withMonadS3(container) { s3Client =>
+    "be applied against async interpreters where S3 exceptions are captured via MonadError" in withS3(container) { s3Client =>
       import tech.backwards.http.CredentialsSerialiser.serialiserCredentialsByPassword
 
       type Algebras[A] = EitherK[Http, S3, A]

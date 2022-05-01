@@ -35,12 +35,12 @@ import tech.backwards.json.JsonOps.syntax._
 import tech.backwards.json.Jsonl
 import tech.backwards.serialisation.Deserialiser
 
-class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
+class HttpS3IntegrationSpec extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "Coproduct Algebras (in this case of Http and S3)" should {
-    "be applied against sync interpreters" in withS3(container) { s3Client =>
+    "be applied against sync interpreters" in withS3[Id](container) { s3Client =>
       type Algebras[A] = EitherK[Http, S3, A]
 
       // Example of paginating a Http Get

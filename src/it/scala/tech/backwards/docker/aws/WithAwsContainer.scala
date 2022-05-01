@@ -24,9 +24,7 @@ trait WithAwsContainer {
 
   lazy val s3Client: S3Client = {
     val shutdownHook: S3Client => Unit =
-      s3Client => sys.addShutdownHook(
-        (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
-      )
+      s3Client => sys addShutdownHook (Try(s3Client.close()) *> Try(scribe.info(s"Stopping LocalStackContainer: ${container.containerId}")) *> Try(container.stop())).fold(throw _, identity)
 
     S3Client(
       DefaultCredentialsProvider.create.resolveCredentials,

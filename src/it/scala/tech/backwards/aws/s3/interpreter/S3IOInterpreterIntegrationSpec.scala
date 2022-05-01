@@ -20,12 +20,12 @@ import tech.backwards.fp.free.FreeOps.syntax._
  * View object:
  *  - aws --endpoint-url=http://127.0.0.1:54998 s3 cp s3://my-bucket/foo -
  */
-class S3IOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
+class S3IOInterpreterIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 
   "S3 Algebra" should {
-    "be applied against an async interpreter" in withMonadS3(container) { s3Client =>
+    "be applied against an async interpreter" in withS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
           bucket    <- bucket("my-bucket").liftFree[S3]

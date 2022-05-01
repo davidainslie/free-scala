@@ -26,7 +26,7 @@ sbt it:test
 
 Run IT apps (of multiple Algebra) which connect to a test Http API and LocalStack:
 ```shell
-sbt "it:runMain tech.backwards.algebra.interpreter.AlgebrasIOInterpreterITApp"
+sbt "it:runMain tech.backwards.algebra.interpreter.HttpS3App"
 
 sbt "it:runMain tech.backwards.algebra.interpreter.AlgebrasIOStreamInterpreterITApp"
 ```
