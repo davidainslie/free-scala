@@ -36,7 +36,7 @@ import tech.backwards.json.Jsonl
 import tech.backwards.serialisation.Deserialiser
 import tech.backwards.util.EitherOps.syntax._
 
-class AlgebrasIOInterpreterIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
+class HttpS3IOIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 

@@ -20,7 +20,7 @@ import tech.backwards.fp.implicits._
  * View object:
  *  - aws --endpoint-url=http://127.0.0.1:54998 s3 cp s3://my-bucket/foo -
  */
-class S3InterpreterIT extends AnyWordSpec with Matchers with ForAllTestContainer with AwsContainer {
+class S3InterpreterIntegrationSpec extends AnyWordSpec with Matchers with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 

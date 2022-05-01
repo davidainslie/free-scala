@@ -35,7 +35,7 @@ import tech.backwards.json.JsonOps.syntax._
 import tech.backwards.json.Jsonl
 import tech.backwards.serialisation.Deserialiser
 
-class AlgebrasInterpreterIT extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
+class HttpS3IntegrationSpec extends AnyWordSpec with Matchers with Inspectors with ForAllTestContainer with AwsContainer {
   override val container: LocalStackContainer =
     LocalStackContainer(services = List(Service.S3))
 

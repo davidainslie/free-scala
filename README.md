@@ -38,7 +38,7 @@ Also, the first example shows the use of `Context Bound` to express the `Algebra
 
 ## Get paginated Http accumulate each page and Put as one S3 Object
 
-Take a look at the example code [AlgebrasIOInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
+Take a look at the example code [HttpS3IntegrationApp](src/it/scala/tech/backwards/algebra/interpreter/HttpS3IntegrationApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
 type `Http~>Algebras`[_] = InjectK[Http, Algebras]
@@ -73,7 +73,7 @@ def paginate: Free[F, Vector[Json]] = {
 
 ## Get paginated Http streaming each page to S3 completing as one Object
 
-Take a look at the example code [AlgebrasIOStreamInterpreterITApp](src/it/scala/tech/backwards/algebra/interpreter/AlgebrasIOStreamInterpreterITApp.scala) where the following program (of multiple Algebra) is run:
+Take a look at the example code [HttpS3StreamIntegrationApp](src/it/scala/tech/backwards/algebra/interpreter/HttpS3StreamIntegrationApp.scala) where the following program (of multiple Algebra) is run:
 
 ```scala
 def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =

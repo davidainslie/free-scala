@@ -68,7 +68,7 @@ import tech.backwards.serialisation.{Deserialiser, Serialiser}
  *   }
  * }}}
  */
-object AlgebrasIOStreamInterpreterApp extends IOApp.Simple {
+object HttpS3StreamApp extends IOApp.Simple {
   type Algebras[A] = EitherK[Http, S3, A]
 
   implicit class GetOps(get: Get[Json])(implicit D: Deserialiser[Json], IH: InjectK[Http, Algebras], S: Serialiser[Jsonl], IS: InjectK[S3, Algebras]) {

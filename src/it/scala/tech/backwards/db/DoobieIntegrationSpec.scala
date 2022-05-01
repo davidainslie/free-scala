@@ -14,7 +14,7 @@ import org.testcontainers.utility.DockerImageName
 import fly4s.core._
 import fly4s.core.data._
 
-class DoobieIT extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer {
+class DoobieIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matchers with ForAllTestContainer {
   override val container: PostgreSQLContainer =
     PostgreSQLContainer(DockerImageName.parse("postgres:14-alpine3.15"))
 
