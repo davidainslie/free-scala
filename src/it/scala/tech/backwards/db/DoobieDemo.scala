@@ -68,6 +68,7 @@ sealed trait DoobieDemo {
     } yield xa
 }
 
+// TODO - For this first demo app, run docker-compose.yml (under src/it/resources/db) - All other demos handle Docker automatically.
 object DoobieDemoApp1 extends DoobieDemo with IOApp.Simple {
   /**
    * The sql interpolator allows us to create SQL statement fragments.
@@ -98,7 +99,7 @@ object DoobieDemoApp1 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findAllActorNames.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp2 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp2 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * If we know for sure that the query will return exactly one row, we can use the unique method.
    * However, if the query doesn’t return any row, we will get an exception.
@@ -111,7 +112,7 @@ object DoobieDemoApp2 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findActorById(1).transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp3 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp3 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * To avoid exceptions with "unique", we can safely use the option method and let the program return an Option[Actor].
    */
@@ -122,7 +123,7 @@ object DoobieDemoApp3 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findActorById(1).transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp4 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp4 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * Although extracting actors in a List[String] seems legit at first sight, it’s not safe in a real-world scenario. In fact, the number of extracted rows could be too much for the memory allocated to the application.
    */
@@ -133,7 +134,7 @@ object DoobieDemoApp4 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(actorNames.compile.toList.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp5 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp5 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * Although extracting actors in a List[String] seems legit at first sight, it’s not safe in a real-world scenario. In fact, the number of extracted rows could be too much for the memory allocated to the application.
    */
@@ -154,7 +155,7 @@ object DoobieDemoApp5 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findAllActorIdsAndNames.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp6 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp6 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   val findAllActors: fs2.Stream[ConnectionIO, Actor] =
     sql"select id, name from actors".query[Actor].stream
 
@@ -162,7 +163,7 @@ object DoobieDemoApp6 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findAllActors.compile.toList.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp7 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp7 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   val findActorsByNameInitialLetter: Char => fs2.Stream[ConnectionIO, Actor] =
     _.toString.pipe(initialLetter => sql"select id, name from actors where LEFT(name, 1) = $initialLetter".query[Actor].stream)
 
@@ -170,7 +171,7 @@ object DoobieDemoApp7 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findActorsByNameInitialLetter('H').compile.toList.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp8 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp8 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * The `sql` interpolator is an alias of the more general `fr` interpolator, whose name stands for Fragment.
    * A fragment is a piece of an SQL statement that we can combine with any other fragment to build a proper SQL instruction.
@@ -197,7 +198,7 @@ object DoobieDemoApp8 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findActorsByNameInitialLetter('H').compile.toList.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp9 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp9 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * As a follow on, Fragments provides useful functions e.g. using "in" with "where"
    */
@@ -213,7 +214,7 @@ object DoobieDemoApp9 extends DoobieDemo with IOApp.Simple {
     postgresResource.use(findActorsByName(NonEmptyList.of("Henry Cavill", "Gal Godot")).compile.toList.transact[IO]).map(pprint.pprintln(_))
 }
 
-object DoobieDemoApp10 extends DoobieDemo with IOApp.Simple {
+object DoobieDemoApp10 extends WithPostgresContainer("db/sql/schema-test-container.sql".some) with IOApp.Simple {
   /**
    * Moving onto mutation such as "insert"
    */
