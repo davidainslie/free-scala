@@ -73,12 +73,15 @@ class DoobieS3IntegrationSpec extends AsyncWordSpec with AsyncIOSpec with Matche
         for {
           bucket    <- bucket("my-bucket").toFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
-          actors    <- sql"select id, name from actors".query[Actor].stream.compile.toVector.injectFree[Algebras]
-          _         <- when(actors.nonEmpty, PutStream(bucket, "foo", Jsonl(actors.map(_.asJson))), CompletePutStream(bucket, "foo"))
-          _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(actors.map(_.asJson.noSpaces).mkString("\n")))
-          response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))
-        } yield
+          key       = "foo"
+          _         <- sql"select id, name from actors".query[Actor].stream.map(actor =>
+                          PutStream(bucket, key, actor.asJson)
+                       ).as(CompletePutStream(bucket, key)).compile.drain.injectFree[Algebras]
+          response  <- GetObject[Jsonl](getObjectRequest(bucket, key))
+        } yield {
+          pprint.pprintln(response)
           response
+        }
 
       val driverConfig: DriverConfig[org.postgresql.Driver] =
         DriverConfig[org.postgresql.Driver](URI.create(jdbcUrl), Credentials(User(username), Password(password)))
