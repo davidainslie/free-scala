@@ -23,4 +23,7 @@ object Serialiser {
 
   implicit val serialiserJsonl: Serialiser[Jsonl] =
     _.value.pipe(serialiserVectorJson.serialise)
+
+  implicit val serialiserJson: Serialiser[Json] =
+    _.noSpaces.getBytes
 }

@@ -13,10 +13,10 @@ object Dependencies {
     ).flatten
 
   lazy val scalaMeta: Seq[ModuleID] =
-    LinearSeq("org.scalameta" %% "scalameta" % "4.5.2")
+    LinearSeq("org.scalameta" %% "scalameta" % "4.5.9")
 
   lazy val scalatest: Seq[ModuleID] =
-    LinearSeq("org.scalatest" %% "scalatest" % "3.2.11" % "test, it" withSources() withJavadoc())
+    LinearSeq("org.scalatest" %% "scalatest" % "3.2.12" % "test, it" withSources() withJavadoc())
 
   lazy val specs2: Seq[ModuleID] = {
     val group = "org.specs2"
@@ -32,7 +32,7 @@ object Dependencies {
 
   lazy val scalatestContainers: Seq[ModuleID] = {
     val group = "com.dimafeng"
-    val version = "0.40.4"
+    val version = "0.40.8"
 
     LinearSeq(
       "testcontainers-scala-scalatest", "testcontainers-scala-munit",
@@ -46,7 +46,7 @@ object Dependencies {
 
   lazy val log4Cats: Seq[ModuleID] = {
     val group = "org.typelevel"
-    val version = "2.2.0"
+    val version = "2.3.1"
 
     LinearSeq(
       "log4cats-core", "log4cats-slf4j"
@@ -54,7 +54,7 @@ object Dependencies {
   }
 
   lazy val scribe: Seq[ModuleID] =
-    LinearSeq("com.outr" %% "scribe" % "3.8.2" withSources() withJavadoc())
+    LinearSeq("com.outr" %% "scribe" % "3.8.3" withSources() withJavadoc())
 
   lazy val pprint: Seq[ModuleID] =
     LinearSeq("com.lihaoyi" %% "pprint" % "0.7.3")
@@ -72,7 +72,7 @@ object Dependencies {
 
   lazy val catsEffect: Seq[ModuleID] = {
     val group = "org.typelevel"
-    val version = "3.3.9"
+    val version = "3.3.12"
 
     LinearSeq(
       "cats-effect"
@@ -98,14 +98,14 @@ object Dependencies {
     LinearSeq("io.scalaland" %% "catnip" % "1.1.2")
 
   lazy val mouse: Seq[ModuleID] =
-    LinearSeq("org.typelevel" %% "mouse" % "1.0.10" withSources() withJavadoc())
+    LinearSeq("org.typelevel" %% "mouse" % "1.0.11" withSources() withJavadoc())
 
   lazy val simulacrum: Seq[ModuleID] =
     LinearSeq("org.typelevel" %% "simulacrum" % "1.0.1" withSources() withJavadoc())
 
   lazy val refined: Seq[ModuleID] = {
     val group = "eu.timepit"
-    val version = "0.9.28"
+    val version = "0.9.29"
 
     LinearSeq(
       "refined", "refined-cats"
@@ -134,7 +134,7 @@ object Dependencies {
 
   lazy val circe: Seq[ModuleID] = {
     val group = "io.circe"
-    val version = "0.14.1"
+    val version = "0.14.2"
 
     LinearSeq(
       "circe-core", "circe-generic", "circe-generic-extras", "circe-parser", "circe-refined", "circe-literal"
@@ -157,7 +157,7 @@ object Dependencies {
 
   lazy val sttp: Seq[ModuleID] = {
     val group = "com.softwaremill.sttp.client3"
-    val version = "3.5.1"
+    val version = "3.6.2"
 
     LinearSeq(
       "core", "circe", "scribe-backend",
@@ -168,7 +168,7 @@ object Dependencies {
 
   lazy val awsJava: Seq[ModuleID] = {
     val group = "software.amazon.awssdk"
-    val version = "2.17.162"
+    val version = "2.17.204"
 
     LinearSeq(
       "aws-core", "sdk-core", "regions", "auth", "utils", "s3"
@@ -177,7 +177,7 @@ object Dependencies {
 
   lazy val awsJavaLegacy: Seq[ModuleID] = {
     val group = "com.amazonaws"
-    val version = "1.12.191"
+    val version = "1.12.233"
 
     LinearSeq(
       "aws-java-sdk-core"
@@ -189,18 +189,18 @@ object Dependencies {
 
   lazy val doobie: Seq[ModuleID] = {
     val group = "org.tpolecat"
-    val version = "1.0.0-RC1"
+    val version = "1.0.0-RC2"
 
     LinearSeq(
-      "doobie-core", "doobie-h2", "doobie-postgres", "doobie-hikari", "doobie-quill", "doobie-free"
+      "doobie-core", "doobie-h2", "doobie-postgres", "doobie-hikari", /*"doobie-quill",*/ "doobie-free"
     ).map(group %% _ % version withSources() withJavadoc()) ++ LinearSeq(
       "doobie-specs2", "doobie-scalatest"
     ).map(group %% _ % version % "test, it" withSources() withJavadoc())
   }
 
   lazy val postgresql: Seq[ModuleID] =
-    LinearSeq("org.postgresql" % "postgresql" % "42.3.3")
+    LinearSeq("org.postgresql" % "postgresql" % "42.3.6")
 
   lazy val flyway: Seq[ModuleID] =
-    LinearSeq("com.github.geirolz" %% "fly4s-core" % "0.0.12")
+    LinearSeq("com.github.geirolz" %% "fly4s-core" % "0.0.13")
 }
