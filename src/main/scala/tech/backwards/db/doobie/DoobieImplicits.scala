@@ -1,4 +1,4 @@
-package tech.backwards.doobie
+package tech.backwards.db.doobie
 
 import doobie.postgres.{Instances, JavaTimeInstances, free, syntax}
 
@@ -9,8 +9,7 @@ import doobie.postgres.{Instances, JavaTimeInstances, free, syntax}
  *   import doobie.postgres.implicits._
  * }}}
  */
-trait DoobieImplicits
-  extends Instances
+trait DoobieImplicits extends Instances
   with free.Instances
   with JavaTimeInstances
   with syntax.ToPostgresMonadErrorOps

@@ -18,10 +18,10 @@ import tech.backwards.aws.s3.{PutStreamHandle, PutStreamHandleKey, S3, S3Client}
  * Asynchronous S3 Algebra Interpreter
  * TODO - Regarding non-stream cases, there is a fs2 S3 library that could be spiked.
  * TODO - This interpreter carries "state".
- * It would be better to encapsulate state within Free and add to S3 Algebra an ADT that would delegate to some other Free.
- * e.g. PutStream(bucket, key, nextFree)
+ *  It would be better to encapsulate state within Free and add to S3 Algebra an ADT that would delegate to some other Free.
+ *  e.g. PutStream(bucket, key, nextFree)
  */
-class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[PutStreamHandleKey, PutStreamHandle]]) extends (S3 ~> IO) {
+private class S3IOInterpreter private(s3Client: S3Client, putStreamHandles: Ref[IO, Map[PutStreamHandleKey, PutStreamHandle]]) extends (S3 ~> IO) {
   private def close: IO[Unit] =
     putStreamHandles.update(_.values.foreach(_.abort()).pipe(_ => Map.empty[PutStreamHandleKey, PutStreamHandle]))
 

@@ -94,7 +94,7 @@ object HttpS3IntegrationApp extends IOApp.Simple with WithAwsContainer {
 
   def program[F: `Http~>Algebras`: `S3~>Algebras`]: Free[Algebras, Jsonl] =
     for {
-      bucket    <- bucket("my-bucket").liftFree[Algebras]
+      bucket    <- bucket("my-bucket").toFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
       data      <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate
       _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString(data.map(_.noSpaces).mkString("\n")))

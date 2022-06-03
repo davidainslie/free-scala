@@ -77,10 +77,10 @@ object HttpS3StreamIntegrationApp extends IOApp.Simple with WithAwsContainer {
       def go(get: Get[Json], page: Int): Free[Algebras, Unit] = {
         for {
           json  <- paramsL[Json].modify(_ + ("page" -> page))(get)
-          data  <- Jsonl((json \ "data").flatMap(_.asArray)).liftFree[Algebras]
+          data  <- Jsonl((json \ "data").flatMap(_.asArray)).toFree[Algebras]
           _     <- when(data.value.nonEmpty, PutStream(bucket, key, data), unit[Algebras])
           //_   <- (if ("1" == "1") throw new Exception("whoops") else ()).liftFree[Algebras] // TODO - Remove test and put in actual test
-          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).liftFree[Algebras]
+          pages <- (json \ "meta" \ "pagination" \ "pages").flatMap(_.as[Int].toOption).getOrElse(0).toFree[Algebras]
           _     <- if (page < pages && page < maxPages) go(get, page + 1) else unit[Algebras]
         } yield ()
       }
@@ -91,7 +91,7 @@ object HttpS3StreamIntegrationApp extends IOApp.Simple with WithAwsContainer {
 
   def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
     for {
-      bucket    <- bucket("my-bucket").liftFree[Algebras]
+      bucket    <- bucket("my-bucket").toFree[Algebras]
       _         <- CreateBucket(createBucketRequest(bucket))
       _         <- Get[Json](uri("https://gorest.co.in/public/v1/users")).paginate(bucket, "foo")
       response  <- GetObject[Jsonl](getObjectRequest(bucket, "foo"))

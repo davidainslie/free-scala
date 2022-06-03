@@ -28,7 +28,7 @@ class S3InterpreterIntegrationSpec extends AnyWordSpec with Matchers with ForAll
     "be applied against a default sync interpreter" in withS3[Id](container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[S3]
+          bucket    <- bucket("my-bucket").toFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
           response  <- GetObject[String](getObjectRequest(bucket, "foo"))
@@ -46,10 +46,10 @@ class S3InterpreterIntegrationSpec extends AnyWordSpec with Matchers with ForAll
 
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[S3]
+          bucket    <- bucket("my-bucket").toFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
-          _         <- (if (true) throw exception else ()).liftFree[S3]
+          _         <- (if (true) throw exception else ()).toFree[S3]
           response  <- GetObject[String](getObjectRequest(bucket, "foo"))
         } yield response
 

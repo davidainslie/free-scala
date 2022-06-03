@@ -18,7 +18,7 @@ class S3Spec extends AnyWordSpec with Matchers {
     "be applied against a stubbed interpreter (a naive implementation that can just throw exceptions)" in {
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[S3]
+          bucket    <- bucket("my-bucket").toFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
           response  <- GetObject[String](getObjectRequest(bucket, "foo"))
@@ -35,7 +35,7 @@ class S3Spec extends AnyWordSpec with Matchers {
 
       def program[F: `S3~>S3`]: Free[S3, String] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[S3]
+          bucket    <- bucket("my-bucket").toFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
           response  <- GetObject[String](getObjectRequest(bucket, "foo"))

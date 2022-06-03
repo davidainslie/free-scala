@@ -28,7 +28,7 @@ class S3IOInterpreterIntegrationSpec extends AsyncWordSpec with AsyncIOSpec with
     "be applied against an async interpreter" in withS3(container) { s3Client =>
       def program(implicit I: InjectK[S3, S3]): Free[S3, String] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[S3]
+          bucket    <- bucket("my-bucket").toFree[S3]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- PutObject(putObjectRequest(bucket, "foo"), RequestBody.fromString("Blah blah"))
           response  <- GetObject[String](getObjectRequest(bucket, "foo"))

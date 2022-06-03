@@ -13,7 +13,7 @@ import tech.backwards.aws.s3.{PutStreamHandle, PutStreamHandleKey, S3, S3Client}
 /**
  * Default and simplest synchronous S3 Algebra Interpreter
  */
-class S3Interpreter private(s3Client: S3Client, putStreamHandles: AtomicReference[Map[PutStreamHandleKey, PutStreamHandle]]) extends (S3 ~> Id) {
+private class S3Interpreter private(s3Client: S3Client, putStreamHandles: AtomicReference[Map[PutStreamHandleKey, PutStreamHandle]]) extends (S3 ~> Id) {
   private def close(): Unit =
     putStreamHandles.getAndUpdate(_.values.foreach(_.abort()).pipe(_ => Map.empty[PutStreamHandleKey, PutStreamHandle]))
 

@@ -1,4 +1,4 @@
-package tech.backwards.db
+package tech.backwards.db.doobie
 
 import java.util.UUID
 import scala.util.chaining.scalaUtilChainingOps
@@ -10,7 +10,6 @@ import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import io.estatico.newtype.macros.newtype
 import tech.backwards.docker.db.WithPostgresContainer
-import tech.backwards.doobie.DoobieImplicits
 
 /**
  * See https://blog.rockthejvm.com/doobie/

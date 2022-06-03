@@ -86,7 +86,7 @@ class HttpS3IntegrationSpec extends AnyWordSpec with Matchers with Inspectors wi
 
       def program(implicit H: InjectK[Http, Algebras], S: InjectK[S3, Algebras]): Free[Algebras, Jsonl] =
         for {
-          bucket    <- bucket("my-bucket").liftFree[Algebras]
+          bucket    <- bucket("my-bucket").toFree[Algebras]
           _         <- CreateBucket(createBucketRequest(bucket))
           _         <- Post[Credentials, Auth](uri("https://backwards.com/api/oauth2/access_token"), body = Credentials(User("user"), Password("password")).some)
           data      <- Get[Json](uri("https://backwards.com/api/execute")).paginate
